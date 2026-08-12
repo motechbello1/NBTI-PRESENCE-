@@ -1,13 +1,24 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { Shell, PageHead, Stat, StatusPill, Pill, Spinner, Empty } from "../components/UI";
+import { Shell, StatusPill, Pill, Spinner } from "../components/UI";
 import { myHistory } from "../lib/db";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
 } from "recharts";
 
-const fmtDate = (d) => new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
+const fmtDate = (date) => new Date(date).toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
+const fmtLongDate = (date) => new Date(date).toLocaleDateString("en-GB", { weekday: "short", day: "2-digit", month: "short" });
 const fmtTime = (iso) => iso ? new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : "—";
+
+function RegisterTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="history-tooltip">
+      <span className="mono">{label}</span>
+      <strong className="mono">{Number(payload[0].value).toFixed(1)} hours</strong>
+    </div>
+  );
+}
 
 export default function History() {
   const { session } = useAuth();
@@ -19,19 +30,19 @@ export default function History() {
   }, [session]);
 
   const stats = useMemo(() => {
-    const present = rows.filter((r) => r.status === "present").length;
-    const late = rows.filter((r) => r.status === "late").length;
-    const early = rows.filter((r) => r.early_departure).length;
-    const hours = rows.reduce((a, r) => a + (r.hours_worked || 0), 0);
+    const present = rows.filter((row) => row.status === "present").length;
+    const late = rows.filter((row) => row.status === "late").length;
+    const early = rows.filter((row) => row.early_departure).length;
+    const hours = rows.reduce((sum, row) => sum + (row.hours_worked || 0), 0);
     const rate = rows.length ? Math.round(((present + late) / rows.length) * 100) : 0;
     return { present, late, early, hours: hours.toFixed(1), rate, days: rows.length };
   }, [rows]);
 
   const chart = useMemo(
-    () => [...rows].reverse().slice(-21).map((r) => ({
-      day: fmtDate(r.work_date),
-      hours: r.hours_worked || 0,
-      status: r.status,
+    () => [...rows].reverse().slice(-21).map((row) => ({
+      day: fmtDate(row.work_date),
+      hours: row.hours_worked || 0,
+      status: row.status,
     })),
     [rows]
   );
@@ -40,68 +51,119 @@ export default function History() {
 
   return (
     <Shell>
-      <PageHead eyebrow="Last 90 days" title="My record" />
-
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
-        <Stat label="Days recorded" value={stats.days} />
-        <Stat label="Attendance" value={`${stats.rate}%`} tone={stats.rate >= 90 ? "clear" : stats.rate >= 75 ? "hold" : "deny"} />
-        <Stat label="On time" value={stats.present} tone="clear" />
-        <Stat label="Late" value={stats.late} tone={stats.late ? "hold" : "paper"} />
-        <Stat label="Total hours" value={stats.hours} sub={`${stats.early} early departures`} />
-      </div>
-
-      {rows.length === 0 ? (
-        <Empty title="Nothing recorded yet">
-          Once you sign in on site, your days will build up here.
-        </Empty>
-      ) : (
-        <>
-          <div className="panel p-5 mb-6">
-            <div className="eyebrow mb-4">Hours on site, last 21 days</div>
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={chart} margin={{ top: 4, right: 4, left: -22, bottom: 0 }}>
-                <CartesianGrid stroke="#22303F" vertical={false} />
-                <XAxis dataKey="day" stroke="#8298AC" fontSize={10} tickLine={false} axisLine={false} />
-                <YAxis stroke="#8298AC" fontSize={10} tickLine={false} axisLine={false} />
-                <Tooltip
-                  cursor={{ fill: "rgba(61,220,151,0.06)" }}
-                  contentStyle={{ background: "#17222E", border: "1px solid #22303F", borderRadius: 3, fontSize: 12 }}
-                />
-                <Bar dataKey="hours" radius={[2, 2, 0, 0]}>
-                  {chart.map((d, i) => (
-                    <Cell key={i} fill={d.status === "late" ? "#E8A33D" : "#00A65A"} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+      <section className="history-page" aria-labelledby="history-title">
+        <header className="history-head">
+          <div>
+            <div className="eyebrow">Personal attendance ledger · rolling 90 days</div>
+            <h1 id="history-title" className="display">My attendance record</h1>
           </div>
-
-          <div className="panel scroll-x">
-            <table className="tbl">
-              <thead>
-                <tr><th>Date</th><th>In</th><th>Out</th><th>Hours</th><th>Status</th><th>Notes</th></tr>
-              </thead>
-              <tbody>
-                {rows.map((r) => (
-                  <tr key={r.id}>
-                    <td className="mono text-[13px]">{new Date(r.work_date).toLocaleDateString("en-GB", { weekday: "short", day: "2-digit", month: "short" })}</td>
-                    <td className="mono text-[13px]">{fmtTime(r.sign_in_at)}</td>
-                    <td className="mono text-[13px]">{fmtTime(r.sign_out_at)}</td>
-                    <td className="mono text-[13px]">{r.hours_worked ? `${r.hours_worked}h` : "—"}</td>
-                    <td className="space-x-1.5 whitespace-nowrap">
-                      <StatusPill status={r.status} />
-                      {r.early_departure && <Pill tone="hold">Early</Pill>}
-                    </td>
-                    <td className="text-[13px] text-muted max-w-[260px]">
-                      {r.late_reason || r.early_reason || r.admin_note || "—"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="history-reference mono">
+            <span>REGISTER COPY</span>
+            <strong>{String(stats.days).padStart(2, "0")} ENTRIES</strong>
           </div>
-        </>
-      )}
+        </header>
+
+        <dl className="history-summary" aria-label="Attendance summary for the last 90 days">
+          <Summary label="Days recorded" value={stats.days} />
+          <Summary label="Attendance rate" value={`${stats.rate}%`} tone={stats.rate >= 90 ? "clear" : stats.rate >= 75 ? "hold" : "deny"} />
+          <Summary label="On time" value={stats.present} tone="clear" />
+          <Summary label="Late" value={stats.late} tone={stats.late ? "hold" : undefined} />
+          <Summary label="Hours recorded" value={stats.hours} note={`${stats.early} early departure${stats.early === 1 ? "" : "s"}`} />
+        </dl>
+
+        {rows.length === 0 ? (
+          <div className="history-empty notched">
+            <div className="mono history-empty-code">REGISTER · NO ENTRIES</div>
+            <div>
+              <h2 className="display">Your record is ready to begin.</h2>
+              <p>Once an on-site sign-in clears all four checks, that working day will appear here.</p>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="history-evidence">
+              <section className="history-chart" aria-labelledby="hours-chart-title">
+                <div className="history-section-head">
+                  <div>
+                    <div className="eyebrow">Measured time on site</div>
+                    <h2 id="hours-chart-title" className="display">Last 21 recorded days</h2>
+                  </div>
+                  <span className="mono">HOURS / DAY</span>
+                </div>
+                <div className="history-chart-frame" role="img" aria-label="Bar chart showing hours recorded on site for the last 21 attendance days">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chart} margin={{ top: 12, right: 4, left: -22, bottom: 0 }}>
+                      <CartesianGrid stroke="var(--rule)" strokeDasharray="1 5" vertical={false} />
+                      <XAxis dataKey="day" stroke="var(--muted)" fontFamily="IBM Plex Mono" fontSize={9} tickLine={false} axisLine={false} interval="preserveStartEnd" />
+                      <YAxis stroke="var(--muted)" fontFamily="IBM Plex Mono" fontSize={9} tickLine={false} axisLine={false} />
+                      <Tooltip cursor={{ fill: "color-mix(in srgb, var(--rule) 25%, transparent)" }} content={<RegisterTooltip />} />
+                      <Bar dataKey="hours" maxBarSize={24}>
+                        {chart.map((day, index) => (
+                          <Cell key={`${day.day}-${index}`} fill={day.status === "late" ? "var(--review)" : "var(--bureau)"} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </section>
+
+              <aside className="history-key" aria-label="How to read this attendance record">
+                <div className="eyebrow">Register key</div>
+                <h2 className="display">What the record means</h2>
+                <dl>
+                  <div><dt><i className="is-clear" />Cleared</dt><dd>Arrival was within the approved window.</dd></div>
+                  <div><dt><i className="is-hold" />Held</dt><dd>Arrival was late or departure was early.</dd></div>
+                  <div><dt className="mono">—</dt><dd>The machine did not receive that reading.</dd></div>
+                </dl>
+                <p>Times and hours are system measurements. Any written reason appears exactly as recorded.</p>
+              </aside>
+            </div>
+
+            <section className="history-register" aria-labelledby="register-title">
+              <div className="history-register-head">
+                <div>
+                  <div className="eyebrow">Chronological register</div>
+                  <h2 id="register-title" className="display">Daily entries</h2>
+                </div>
+                <span className="mono">NEWEST FIRST</span>
+              </div>
+
+              <div className="history-table-wrap">
+                <table className="history-table">
+                  <thead>
+                    <tr><th scope="col">Date</th><th scope="col">In</th><th scope="col">Out</th><th scope="col">Hours</th><th scope="col">Status</th><th scope="col">Recorded note</th></tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((row) => (
+                      <tr key={row.id}>
+                        <td data-label="Date" className="history-date mono">{fmtLongDate(row.work_date)}</td>
+                        <td data-label="Sign in" className="mono">{fmtTime(row.sign_in_at)}</td>
+                        <td data-label="Sign out" className="mono">{fmtTime(row.sign_out_at)}</td>
+                        <td data-label="Hours" className="mono">{row.hours_worked ? `${row.hours_worked}h` : "—"}</td>
+                        <td data-label="Status" className="history-status">
+                          <StatusPill status={row.status} />
+                          {row.early_departure ? <Pill tone="hold">Early</Pill> : null}
+                        </td>
+                        <td data-label="Note" className="history-note">{row.late_reason || row.early_reason || row.admin_note || "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </>
+        )}
+      </section>
     </Shell>
+  );
+}
+
+function Summary({ label, value, note, tone }) {
+  return (
+    <div className={tone ? `is-${tone}` : undefined}>
+      <dt className="mono">{label}</dt>
+      <dd className="mono">{value}</dd>
+      {note ? <small>{note}</small> : null}
+    </div>
   );
 }
