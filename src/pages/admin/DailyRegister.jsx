@@ -111,6 +111,7 @@ export default function DailyRegister() {
                       {isEditing ? (
                         <EditRow
                           record={r}
+                          workDate={date}
                           onCancel={() => setEditing(null)}
                           onSave={(patch) => save(s.id, patch)}
                         />
@@ -138,14 +139,14 @@ export default function DailyRegister() {
   );
 }
 
-function EditRow({ record, onSave, onCancel }) {
+function EditRow({ record, workDate, onSave, onCancel }) {
   const [status, setStatus] = useState(record?.status || "present");
   const [inTime, setInTime] = useState(record?.sign_in_at ? new Date(record.sign_in_at).toTimeString().slice(0, 5) : "08:00");
   const [outTime, setOutTime] = useState(record?.sign_out_at ? new Date(record.sign_out_at).toTimeString().slice(0, 5) : "");
   const [note, setNote] = useState(record?.admin_note || "");
 
   function commit() {
-    const day = record?.work_date || new Date().toISOString().slice(0, 10);
+    const day = record?.work_date || workDate;
     const at = (t) => (t ? new Date(`${day}T${t}:00`).toISOString() : null);
     const patch = { status, sign_in_at: at(inTime), sign_out_at: at(outTime), admin_note: note };
     if (patch.sign_in_at && patch.sign_out_at) {
