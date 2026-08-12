@@ -28,10 +28,12 @@ src/lib/spoofGuard.js        Device-in-frame, screen replay, flat-surface checks
 src/lib/liveness.js          The randomised head-turn challenge
 src/lib/device.js            Handset fingerprint for shared-device detection
 src/lib/db.js                Every database read and write
+src/lib/intelligence.js      Authenticated client for AI reports and chat
 src/components/VerifyFlow    The four-gate attendance run
 src/components/EnrolFlow     Four-pose face enrolment
 src/pages/                   Staff screens
 src/pages/admin/             Administrator screens
+supabase/functions/          Permission-scoped Presence Intelligence service
 ```
 
 ---
@@ -66,6 +68,32 @@ update profiles set role = 'admin' where email = 'your.email@nbti.gov.ng';
 ```
 
 Sign out and back in. The Administration menu appears.
+
+### 2a. Presence Intelligence
+
+The report writer and assistant run in the supplied `presence-intelligence`
+Edge Function. The AI key never enters the Vite application. Deploy the
+function with JWT verification enabled, then set its server-side secrets:
+
+```bash
+supabase functions deploy presence-intelligence
+supabase secrets set AI_GATEWAY_API_KEY=your-gateway-key
+supabase secrets set AI_MODEL_ID=openai/gpt-5.4-mini
+```
+
+`AI_MODEL_ID` can be any current text model exposed by Vercel AI Gateway. A
+free model can be selected for development, but NBTI should review that
+provider's retention and training terms before sending government attendance
+aggregates to it. The default compact OpenAI model is chosen for report quality,
+not because the platform depends on OpenAI. Switching providers is one secret
+change.
+
+The function creates its Supabase client from the caller's bearer token. Its
+queries therefore retain the existing row-level security and the
+`security_invoker` reporting view. It sends aggregate attendance evidence to
+the model, not raw face descriptors, incident frames or exact coordinates.
+Generated findings are advisory and remain visually separate from the source
+charts and register.
 
 ### 3. Set the perimeter before anyone uses it
 
