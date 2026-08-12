@@ -25,7 +25,8 @@ export function Shell({ children }) {
   const nav = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const links = isAdmin ? ADMIN_LINKS : STAFF_LINKS;
-  const badge = isSuperAdmin(profile) ? { kind: "super", label: "Developer super admin" } : authorityBadgeFor(profile);
+  const superAdmin = isSuperAdmin(profile);
+  const badge = superAdmin ? { kind: "super", label: "Developer super admin" } : authorityBadgeFor(profile);
 
   const navigation = (mobile = false) => (
     <nav className={mobile ? "app-mobile-nav" : "app-nav"} aria-label={isAdmin ? "Administration" : "Staff account"}>
@@ -45,7 +46,7 @@ export function Shell({ children }) {
   );
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell${superAdmin ? " super-admin-shell" : ""}`} data-authority={superAdmin ? "master" : undefined}>
       <aside className="app-rail">
         <button className="app-home" onClick={() => nav(isAdmin ? "/admin" : "/")} aria-label="NBTI Presence home">
           <Wordmark />

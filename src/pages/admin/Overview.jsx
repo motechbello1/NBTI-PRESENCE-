@@ -45,6 +45,19 @@ function BoardTooltip({ active, payload, label }) {
   );
 }
 
+function MasterSigil() {
+  return (
+    <svg className="master-sigil" viewBox="0 0 240 240" aria-hidden="true">
+      <circle cx="120" cy="120" r="105" />
+      <circle cx="120" cy="120" r="81" />
+      <path d="M120 15v18M120 207v18M15 120h18M207 120h18" />
+      <path d="M47 47l13 13M180 180l13 13M193 47l-13 13M60 180l-13 13" />
+      <path className="master-sigil-core" d="M120 63l49 28v58l-49 28-49-28V91z" />
+      <path className="master-sigil-letter" d="M91 146V94l29 27 29-27v52M120 121v35" />
+    </svg>
+  );
+}
+
 function SuperAdminEntrance({ name, onFinished }) {
   useEffect(() => {
     const timer = setTimeout(onFinished, 580);
@@ -53,11 +66,19 @@ function SuperAdminEntrance({ name, onFinished }) {
 
   return (
     <div className="super-entrance" role="status" aria-live="polite">
-      <SecurityRail className="super-entrance-rail" />
-      <div className="super-entrance-mark"><AuthorityBadge badge={{ kind: "super", label: "Developer super admin" }} /></div>
-      <div className="mono super-entrance-code">MASTER AUTHORITY CONFIRMED</div>
-      <div className="display super-entrance-title">Welcome, Super Admin.</div>
-      <div className="super-entrance-name">{name}</div>
+      <SecurityRail className="super-entrance-rail is-left" />
+      <SecurityRail className="super-entrance-rail is-right" />
+      <div className="super-entrance-hud mono"><span>ROOT ACCESS</span><span>AUTHORITY TIER Ω</span><span>04 / 04 SECTORS</span></div>
+      <div className="super-entrance-sigil"><MasterSigil /><AuthorityBadge badge={{ kind: "super", label: "Developer super admin" }} /></div>
+      <div className="mono super-entrance-code">MASTER ORCHESTRATOR ONLINE</div>
+      <div className="display super-entrance-title">The system recognises its master.</div>
+      <div className="super-entrance-name">Welcome, {name}.</div>
+      <div className="super-entrance-sectors" aria-hidden="true">
+        {[["01", "BOARD"], ["02", "PEOPLE"], ["03", "EVIDENCE"], ["04", "RULES"]].map(([number, label]) => (
+          <div key={number}><span className="mono">{number}</span><strong>{label}</strong><i /><small className="mono">UNLOCKED</small></div>
+        ))}
+      </div>
+      <div className="mono super-entrance-foot">ENTERING THE NBTI CONTROL UNIVERSE</div>
     </div>
   );
 }
@@ -129,32 +150,42 @@ export default function Overview() {
     <Shell>
       {showEntrance ? <SuperAdminEntrance name={profile?.full_name} onFinished={finishEntrance} /> : null}
       <section className={`admin-overview${superAdmin ? " is-super" : ""}`} aria-labelledby="admin-overview-title">
+        <div className="master-status-bar mono" aria-label="Super administrator system status">
+          <span><i /> SYSTEM ONLINE</span>
+          <span>MASTER NODE · ABUJA</span>
+          <span>AUTHORITY Ω</span>
+          <span>{new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</span>
+        </div>
         <header className="admin-overview-head">
           <div className="admin-overview-title">
-            <div className="mono">BOARD CONTROL · {new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" }).toUpperCase()}</div>
-            <h1 id="admin-overview-title" className="display">The Board, at a glance.</h1>
-            <p>Attendance, unresolved incidents and staff readiness in one place.</p>
+            <div className="mono">MASTER CONTROL · {new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" }).toUpperCase()}</div>
+            <h1 id="admin-overview-title" className="display">All systems answer to you.</h1>
+            <p>Every department, staff record, attendance signal and security incident from one command surface.</p>
           </div>
           <div className="admin-authority-card">
             <AuthorityBadge badge={{ kind: "super", label: "Developer super admin" }} />
-            <span className="mono">FULL BOARD AUTHORITY</span>
+            <span className="mono">MASTER ORCHESTRATOR</span>
             <strong>{profile?.full_name}</strong>
+            <dl className="master-clearance">
+              <div><dt className="mono">CLEARANCE</dt><dd className="mono">OMEGA</dd></div>
+              <div><dt className="mono">SECTORS</dt><dd className="mono">4 / 4</dd></div>
+            </dl>
           </div>
         </header>
 
         <dl className="admin-measures" aria-label="Today’s Board attendance measurements">
-          <Measure label="On site" value={<CountedValue value={inToday} />} note={`of ${activeStaff.length} active staff`} tone="clear" />
-          <Measure label="Turnout" value={<CountedValue value={rate} suffix="%" />} note="recorded today" tone={rate >= 85 ? "clear" : rate >= 60 ? "hold" : "deny"} />
-          <Measure label="Late" value={<CountedValue value={lateToday} />} note="arrivals" tone={lateToday ? "hold" : undefined} />
-          <Measure label="Still inside" value={<CountedValue value={stillIn} />} note="no sign-out yet" />
-          <Measure label="Open incidents" value={<CountedValue value={flags.length} />} note="need review" tone={flags.length ? "deny" : "clear"} />
+          <Measure index="01" label="On site" value={<CountedValue value={inToday} />} note={`of ${activeStaff.length} active staff`} tone="clear" />
+          <Measure index="02" label="Turnout" value={<CountedValue value={rate} suffix="%" />} note="recorded today" tone={rate >= 85 ? "clear" : rate >= 60 ? "hold" : "deny"} />
+          <Measure index="03" label="Late" value={<CountedValue value={lateToday} />} note="arrivals" tone={lateToday ? "hold" : undefined} />
+          <Measure index="04" label="Still inside" value={<CountedValue value={stillIn} />} note="no sign-out yet" />
+          <Measure index="05" label="Open incidents" value={<CountedValue value={flags.length} />} note="need review" tone={flags.length ? "deny" : "clear"} />
         </dl>
 
         <div className="admin-priority-grid">
           <section className="admin-trend" aria-labelledby="attendance-trend-title">
             <div className="admin-section-head">
-              <div><div className="eyebrow">Thirty-day register</div><h2 id="attendance-trend-title" className="display">Daily arrivals</h2></div>
-              <span className="mono">ON TIME / LATE</span>
+              <div><div className="eyebrow">Live signal archive</div><h2 id="attendance-trend-title" className="display">Attendance telemetry</h2></div>
+              <span className="mono">30-DAY FEED</span>
             </div>
             <div className="admin-chart" role="img" aria-label="Line chart showing on-time and late arrivals during the last 30 days">
               <ResponsiveContainer width="100%" height="100%">
@@ -171,8 +202,8 @@ export default function Overview() {
           </section>
 
           <aside className="admin-today" aria-labelledby="today-register-title">
-            <div className="eyebrow">Today’s register</div>
-            <h2 id="today-register-title" className="display">Where staff stand</h2>
+            <div className="eyebrow">Sector status · today</div>
+            <h2 id="today-register-title" className="display">Staff presence</h2>
             <div className="admin-register-total mono"><CountedValue value={activeStaff.length} /><span>ACTIVE STAFF</span></div>
             <dl>
               <StatusLine label="On site" value={inToday} total={activeStaff.length} tone="clear" />
@@ -185,8 +216,8 @@ export default function Overview() {
 
         <section className="admin-attention" aria-labelledby="attention-title">
           <div className="admin-section-head">
-            <div><div className="eyebrow">Requires action</div><h2 id="attention-title" className="display">Attention queue</h2></div>
-            <span className="mono">LIVE COUNTS</span>
+              <div><div className="eyebrow">Command threats</div><h2 id="attention-title" className="display">Intervention matrix</h2></div>
+              <span className="mono">PRIORITY TARGETS</span>
           </div>
           <div className="admin-attention-list">
             <AttentionRow number={flags.length} title="Unresolved incidents" detail="Review refused or suspicious attendance attempts." to="/admin/flags" tone="deny" />
@@ -198,8 +229,8 @@ export default function Overview() {
         <div className="admin-lower-grid">
           <section className="admin-departments" aria-labelledby="department-readiness-title">
             <div className="admin-section-head">
-              <div><div className="eyebrow">Department register</div><h2 id="department-readiness-title" className="display">Staff on site</h2></div>
-              <Link to="/admin/staff" className="mono">MANAGE STAFF</Link>
+              <div><div className="eyebrow">Control territories</div><h2 id="department-readiness-title" className="display">Department sectors</h2></div>
+              <Link to="/admin/staff" className="mono">OPEN COMMAND</Link>
             </div>
             <div className="admin-department-list">
               {departments.map((department) => (
@@ -213,8 +244,8 @@ export default function Overview() {
           </section>
 
           <aside className="admin-master-actions" aria-labelledby="master-actions-title">
-            <div className="eyebrow">Master controls</div>
-            <h2 id="master-actions-title" className="display">Board administration</h2>
+            <div className="eyebrow">Unlocked sectors</div>
+            <h2 id="master-actions-title" className="display">Command deck</h2>
             <nav aria-label="Super administrator shortcuts">
               <Link to="/admin/staff"><span>People and authority</span><small>Staff, access and face records</small></Link>
               <Link to="/admin/reports"><span>Board reports</span><small>Attendance evidence and exports</small></Link>
@@ -226,7 +257,7 @@ export default function Overview() {
         {flags.length ? (
           <section className="admin-incidents" aria-labelledby="latest-incidents-title">
             <div className="admin-section-head">
-              <div><div className="eyebrow">Evidence register</div><h2 id="latest-incidents-title" className="display">Latest incidents</h2></div>
+              <div><div className="eyebrow">Threat intelligence</div><h2 id="latest-incidents-title" className="display">Latest incursions</h2></div>
               <Link to="/admin/flags" className="mono">VIEW ALL</Link>
             </div>
             <div className="admin-incident-list">
@@ -246,8 +277,8 @@ export default function Overview() {
   );
 }
 
-function Measure({ label, value, note, tone }) {
-  return <div className={tone ? `is-${tone}` : undefined}><dt className="mono">{label}</dt><dd className="mono">{value}</dd><small>{note}</small></div>;
+function Measure({ index, label, value, note, tone }) {
+  return <div className={tone ? `is-${tone}` : undefined}><span className="mono admin-measure-node">NODE {index}</span><dt className="mono">{label}</dt><dd className="mono">{value}</dd><small>{note}</small></div>;
 }
 
 function StatusLine({ label, value, total, tone }) {

@@ -23,6 +23,8 @@ Literata is used sparingly for page titles and major institutional statements. I
 
 Pages use an asymmetric twelve-column register grid. Rules separate real groups of information; panels are not added merely to fill space. Credentials alone receive a cut corner. Entry motion completes within 600ms and uses only opacity and transforms. Verification progress, counters and row feedback respect `prefers-reduced-motion`.
 
+The developer super-administrator is the sole environmental exception: Archive Ink becomes the whole command field, Refusal Red changes meaning from incident to root authority, and the document rail expands into an Omega clearance entrance. That gamified treatment is deliberately withheld from staff, HOD, Director and DG accounts so their working environment remains official and calm.
+
 ## The single risk
 
-A narrow guilloché security rail is the one deliberately bold device. It is justified because it refers to document authentication and becomes the real four-gate progress rail during verification. Everything around it stays quiet so it reads as system identity rather than decoration.
+A narrow guilloché security rail is the one deliberately bold device. It is justified because it refers to document authentication, becomes the real four-gate progress rail during verification, and opens into the super-administrator's master-authority frame. Everything around it stays quiet so it reads as system identity rather than decoration.

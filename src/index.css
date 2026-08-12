@@ -1551,3 +1551,185 @@ body {
   .super-entrance { display: none; }
   .admin-attention-list > a:hover, .admin-master-actions a:hover { transform: none; }
 }
+
+/* ─────────────────────────────────────────────
+   SUPER ADMIN UNIVERSE · OMEGA CONTROL
+   This dark command environment is exclusive to the developer
+   super-admin. It does not bleed into staff or delegated authority.
+   ───────────────────────────────────────────── */
+.super-admin-shell {
+  --super-void: color-mix(in srgb, var(--archive) 66%, black);
+  --super-panel: color-mix(in srgb, var(--archive) 94%, var(--ledger));
+  --super-raised: color-mix(in srgb, var(--archive) 88%, var(--ledger));
+  --super-rule: color-mix(in srgb, var(--rule) 25%, transparent);
+  --panel: var(--super-panel);
+  --raised: var(--super-raised);
+  --line: color-mix(in srgb, var(--rule) 24%, var(--archive));
+  --paper: var(--ledger);
+  --muted: color-mix(in srgb, var(--rule) 72%, var(--archive));
+  --ink: var(--super-panel);
+  color: var(--ledger);
+  background: var(--super-void);
+}
+
+.super-admin-shell :focus-visible { outline-color: var(--refusal); }
+.super-admin-shell .app-rail { color: var(--ledger); border-right-color: var(--super-rule); background: var(--super-void); }
+.super-admin-shell .brand-lockup { color: var(--ledger); }
+.super-admin-shell .brand-name span { color: var(--refusal); }
+.super-admin-shell .app-home circle { fill: var(--refusal) !important; }
+.super-admin-shell .app-home path:last-child { stroke: var(--archive); }
+.super-admin-shell .app-rail-section { color: var(--refusal); }
+.super-admin-shell .app-nav { border-top-color: color-mix(in srgb, var(--rule) 48%, transparent); }
+.super-admin-shell .app-nav-link { color: color-mix(in srgb, var(--rule) 75%, var(--archive)); border-bottom-color: var(--super-rule); }
+.super-admin-shell .app-nav-link:hover, .super-admin-shell .app-nav-link.is-active { color: var(--ledger); }
+.super-admin-shell .app-nav-link.is-active .app-nav-rule { background: var(--refusal); box-shadow: 0 0 12px color-mix(in srgb, var(--refusal) 55%, transparent); }
+.super-admin-shell .app-identity { border-top-color: var(--super-rule); }
+.super-admin-shell .app-identity-code, .super-admin-shell .app-agency { color: var(--muted); }
+.super-admin-shell .app-stage { position: relative; isolation: isolate; background: var(--super-void); }
+.super-admin-shell .app-stage::before { content: ""; position: fixed; z-index: -1; inset: 0 0 0 238px; opacity: 0.11; pointer-events: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Cpath d='M0 0H96V96H0ZM24 0V96M48 0V96M72 0V96M0 24H96M0 48H96M0 72H96' fill='none' stroke='%23cad1cb' stroke-width='.4'/%3E%3Ccircle cx='48' cy='48' r='2' fill='none' stroke='%23b33a32' stroke-width='.7'/%3E%3C/svg%3E"); }
+.super-admin-shell .app-content { width: 100%; max-width: 1600px; }
+.super-admin-shell .app-footer { color: var(--muted); border-top-color: var(--super-rule); background: color-mix(in srgb, var(--archive) 78%, black); }
+.super-admin-shell .app-mobile-header { color: var(--ledger); border-bottom-color: var(--super-rule); background: var(--super-void); }
+.super-admin-shell .app-menu-button { color: var(--ledger); }
+.super-admin-shell .app-drawer-panel { color: var(--ledger); background: var(--super-void); }
+.super-admin-shell .app-drawer-head, .super-admin-shell .app-drawer-identity { border-color: var(--super-rule); }
+
+.super-admin-shell .admin-overview { width: min(100%, 1240px); }
+.master-status-bar { display: grid; grid-template-columns: repeat(4, auto); justify-content: space-between; gap: 18px; margin-bottom: 10px; padding: 11px 14px; border: 1px solid color-mix(in srgb, var(--refusal) 42%, transparent); color: var(--muted); background: color-mix(in srgb, var(--archive) 85%, black); font-size: 8px; letter-spacing: 0.11em; }
+.master-status-bar span { display: inline-flex; align-items: center; gap: 7px; }
+.master-status-bar span:first-child { color: color-mix(in srgb, var(--bureau) 38%, var(--ledger)); }
+.master-status-bar i { width: 6px; height: 6px; background: var(--bureau); box-shadow: 0 0 10px color-mix(in srgb, var(--bureau) 60%, transparent); animation: master-node-pulse 1.6s ease-in-out infinite; }
+@keyframes master-node-pulse { 50% { opacity: 0.36; transform: scale(0.72); } }
+
+.super-admin-shell .admin-overview-head { min-height: 330px; border: 1px solid var(--super-rule); border-right: 6px solid var(--refusal); background: color-mix(in srgb, var(--archive) 87%, black); clip-path: polygon(0 0, calc(100% - 28px) 0, 100% 28px, 100% 100%, 0 100%); }
+.super-admin-shell .admin-overview-title { position: relative; overflow: hidden; }
+.super-admin-shell .admin-overview-title::after { content: "Ω"; position: absolute; right: clamp(12px, 5vw, 70px); bottom: -58px; color: color-mix(in srgb, var(--refusal) 13%, transparent); font-family: "Literata Variable", Georgia, serif; font-size: clamp(190px, 23vw, 330px); line-height: 1; pointer-events: none; }
+.super-admin-shell .admin-overview-title > * { position: relative; z-index: 1; }
+.super-admin-shell .admin-overview-title > .mono { color: var(--refusal); }
+.super-admin-shell .admin-overview-title h1 { max-width: 780px; font-size: clamp(46px, 6.5vw, 80px); text-wrap: balance; }
+.super-admin-shell .admin-overview-title p { max-width: 650px; color: var(--muted); }
+.super-admin-shell .admin-authority-card { align-content: center; border-left-color: var(--super-rule); background: color-mix(in srgb, var(--refusal) 5%, transparent); }
+.super-admin-shell .admin-authority-card .authority-badge { color: color-mix(in srgb, var(--refusal) 75%, var(--ledger)); }
+.master-clearance { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 14px 0 0; border-top: 1px solid var(--super-rule); border-left: 1px solid var(--super-rule); }
+.master-clearance > div { padding: 10px; border-right: 1px solid var(--super-rule); border-bottom: 1px solid var(--super-rule); }
+.master-clearance dt { color: var(--muted); font-size: 7px; letter-spacing: 0.1em; }
+.master-clearance dd { margin: 7px 0 0; color: var(--refusal); font-size: 12px; }
+
+.super-admin-shell .admin-measures { gap: 8px; margin-top: 10px; padding: 8px; border-color: var(--super-rule); background: color-mix(in srgb, var(--archive) 80%, black); }
+.super-admin-shell .admin-measures > div { position: relative; min-height: 152px; overflow: hidden; border: 1px solid var(--super-rule); background: var(--super-panel); clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%); }
+.super-admin-shell .admin-measures > div::after { content: ""; position: absolute; top: 0; right: 0; width: 14px; height: 14px; border-left: 1px solid var(--refusal); transform: rotate(45deg) translate(4px, -5px); }
+.admin-measure-node { display: block; margin-bottom: 10px; color: var(--refusal); font-size: 7px; letter-spacing: 0.11em; }
+.super-admin-shell .admin-measures dt { color: var(--muted); }
+.super-admin-shell .admin-measures dd { color: var(--ledger); }
+.super-admin-shell .admin-measures small { color: var(--muted); }
+.super-admin-shell .admin-measures .is-clear dd { color: color-mix(in srgb, var(--bureau) 30%, var(--ledger)); }
+.super-admin-shell .admin-measures .is-hold dd { color: color-mix(in srgb, var(--review) 42%, var(--ledger)); }
+.super-admin-shell .admin-measures .is-deny dd { color: color-mix(in srgb, var(--refusal) 70%, var(--ledger)); }
+
+.super-admin-shell .admin-priority-grid { gap: 8px; padding: 8px; border-color: var(--super-rule); background: color-mix(in srgb, var(--archive) 80%, black); }
+.super-admin-shell .admin-trend, .super-admin-shell .admin-today { border: 1px solid var(--super-rule); background: var(--super-panel); }
+.super-admin-shell .admin-trend { border-right: 1px solid var(--super-rule); }
+.super-admin-shell .admin-today { position: relative; overflow: hidden; border-top: 3px solid var(--refusal); }
+.super-admin-shell .admin-today::after { content: "LIVE"; position: absolute; top: 18px; right: 18px; color: var(--refusal); font-family: "IBM Plex Mono", monospace; font-size: 7px; letter-spacing: 0.12em; }
+.super-admin-shell .admin-section-head h2, .super-admin-shell .admin-today h2 { color: var(--ledger); }
+.super-admin-shell .admin-section-head > span, .super-admin-shell .admin-section-head > a { color: var(--refusal); }
+.super-admin-shell .admin-register-total { color: var(--ledger); border-bottom-color: var(--super-rule); }
+.super-admin-shell .admin-today dl > div { border-bottom-color: var(--super-rule); }
+
+.super-admin-shell .admin-attention { margin-top: 40px; padding: 8px; border: 1px solid var(--super-rule); background: color-mix(in srgb, var(--archive) 80%, black); }
+.super-admin-shell .admin-attention > .admin-section-head { padding: 18px 18px 20px; border-bottom-color: var(--refusal); }
+.super-admin-shell .admin-attention-list { border: 0; }
+.super-admin-shell .admin-attention-list > a { margin-top: 7px; border: 1px solid var(--super-rule); color: var(--ledger); background: var(--super-panel); clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%); }
+.super-admin-shell .admin-attention-list > a:hover { color: var(--ledger); background: var(--super-raised); }
+.super-admin-shell .admin-attention-list > a > .mono { color: var(--ledger); }
+.super-admin-shell .admin-attention-list > a.is-deny > .mono { color: var(--refusal); }
+.super-admin-shell .admin-attention-list > a.is-hold > .mono { color: color-mix(in srgb, var(--review) 45%, var(--ledger)); }
+.super-admin-shell .admin-attention-list small { color: var(--muted); }
+
+.super-admin-shell .admin-lower-grid { gap: 8px; padding: 8px; border: 1px solid var(--super-rule); background: color-mix(in srgb, var(--archive) 80%, black); }
+.super-admin-shell .admin-departments, .super-admin-shell .admin-master-actions { padding: 24px; border: 1px solid var(--super-rule); background: var(--super-panel); }
+.super-admin-shell .admin-department-list { border-top-color: var(--refusal); border-inline-color: var(--super-rule); }
+.super-admin-shell .admin-department-list > div { border-bottom-color: var(--super-rule); transition: background 150ms ease, padding 150ms ease; }
+.super-admin-shell .admin-department-list > div:hover { padding-left: 20px; background: var(--super-raised); }
+.super-admin-shell .admin-department-list strong { color: var(--ledger); }
+.super-admin-shell .admin-master-actions { border-top: 3px solid var(--refusal); }
+.super-admin-shell .admin-master-actions a { position: relative; padding-left: 34px; border-top-color: var(--super-rule); }
+.super-admin-shell .admin-master-actions a::before { content: ""; position: absolute; left: 1px; top: 19px; width: 12px; height: 12px; border: 1px solid var(--refusal); transform: rotate(45deg); }
+.super-admin-shell .admin-master-actions a small { color: var(--muted); }
+
+.super-admin-shell .admin-incidents { padding: 8px; border: 1px solid var(--super-rule); background: color-mix(in srgb, var(--archive) 80%, black); }
+.super-admin-shell .admin-incidents > .admin-section-head { padding: 18px; border-bottom-color: var(--refusal); }
+.super-admin-shell .admin-incident-list { border: 0; }
+.super-admin-shell .admin-incident-list > div { margin-top: 7px; border: 1px solid var(--super-rule); background: var(--super-panel); }
+.super-admin-shell .admin-incident-list strong { color: var(--ledger); }
+.super-admin-shell .pill-deny { color: color-mix(in srgb, var(--refusal) 70%, var(--ledger)); }
+.super-admin-shell .pill-hold { color: color-mix(in srgb, var(--review) 45%, var(--ledger)); }
+
+/* OMEGA ENTRANCE */
+.super-entrance { grid-template-rows: auto 1fr auto; place-content: stretch; padding: 24px clamp(24px, 7vw, 110px); background: color-mix(in srgb, var(--archive) 58%, black); }
+.super-entrance::before { content: ""; position: absolute; inset: 0; opacity: 0.16; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'%3E%3Cpath d='M0 0H72V72H0ZM36 0V72M0 36H72' fill='none' stroke='%23cad1cb' stroke-width='.45'/%3E%3Cpath d='M31 36h10M36 31v10' stroke='%23b33a32' stroke-width='.8'/%3E%3C/svg%3E"); }
+.super-entrance::after { content: ""; position: absolute; inset: 17px; border: 1px solid color-mix(in srgb, var(--refusal) 38%, transparent); pointer-events: none; }
+.super-entrance-rail { left: clamp(24px, 6vw, 92px); width: 54px; opacity: 0.42; }
+.super-entrance-rail.is-right { right: clamp(24px, 6vw, 92px); left: auto; transform: scaleX(-1); }
+.super-entrance-hud { position: relative; z-index: 2; width: 100%; display: grid; grid-template-columns: repeat(3, auto); justify-content: space-between; padding: 6px 0 14px; border-bottom: 1px solid color-mix(in srgb, var(--refusal) 42%, transparent); color: var(--muted); font-size: 8px; letter-spacing: 0.13em; }
+.super-entrance-sigil { position: relative; z-index: 2; align-self: end; display: grid; place-items: center; width: clamp(176px, 23vw, 270px); height: clamp(176px, 23vw, 270px); margin: 22px auto 0; animation: omega-arrive 280ms var(--ease-instrument) both; }
+.master-sigil { position: absolute; inset: 0; width: 100%; height: 100%; fill: none; stroke: color-mix(in srgb, var(--refusal) 48%, transparent); stroke-width: 1; animation: omega-turn 12s linear infinite; }
+.master-sigil-core { fill: color-mix(in srgb, var(--refusal) 12%, transparent); stroke: var(--refusal); stroke-width: 1.5; }
+.master-sigil-letter { fill: none; stroke: var(--ledger); stroke-width: 5; stroke-linecap: square; stroke-linejoin: miter; }
+.super-entrance-sigil .authority-badge { position: relative; z-index: 2; color: var(--refusal); }
+.super-entrance-sigil .authority-badge svg { width: 58px; height: 58px; }
+.super-entrance-sigil .authority-badge > span { display: none; }
+.super-entrance-code { position: relative; z-index: 2; align-self: end; margin-top: 12px; color: var(--refusal); }
+.super-entrance-title { position: relative; z-index: 2; max-width: 920px; margin-inline: auto; font-size: clamp(38px, 6vw, 74px); line-height: 0.98; text-wrap: balance; }
+.super-entrance-name { position: relative; z-index: 2; margin-top: 12px; color: var(--rule); }
+.super-entrance-sectors { position: relative; z-index: 2; align-self: start; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); width: min(100%, 780px); margin: 28px auto 0; border: 1px solid color-mix(in srgb, var(--rule) 22%, transparent); animation: super-copy 240ms 120ms var(--ease-instrument) both; }
+.super-entrance-sectors > div { position: relative; display: grid; grid-template-columns: auto 1fr; gap: 5px 10px; min-width: 0; padding: 12px; border-right: 1px solid color-mix(in srgb, var(--rule) 22%, transparent); }
+.super-entrance-sectors > div:last-child { border-right: 0; }
+.super-entrance-sectors span { color: var(--refusal); font-size: 7px; }
+.super-entrance-sectors strong { font-size: 10px; letter-spacing: 0.08em; }
+.super-entrance-sectors i { width: 6px; height: 6px; margin-top: 3px; background: var(--refusal); box-shadow: 0 0 9px color-mix(in srgb, var(--refusal) 60%, transparent); }
+.super-entrance-sectors small { color: var(--muted); font-size: 7px; letter-spacing: 0.1em; }
+.super-entrance-foot { position: relative; z-index: 2; width: 100%; padding-top: 14px; border-top: 1px solid color-mix(in srgb, var(--refusal) 42%, transparent); color: var(--muted); font-size: 7px; letter-spacing: 0.15em; text-align: center; }
+@keyframes omega-arrive { from { opacity: 0; transform: scale(0.45) rotate(-20deg); } to { opacity: 1; transform: none; } }
+@keyframes omega-turn { to { transform: rotate(360deg); } }
+
+@media (max-width: 1023px) {
+  .super-admin-shell .app-stage::before { inset: 0; }
+  .super-admin-shell .app-content { padding-top: 24px; }
+}
+
+@media (max-width: 720px) {
+  .master-status-bar { grid-template-columns: repeat(2, auto); }
+  .super-admin-shell .admin-overview-head { min-height: 0; }
+  .super-admin-shell .admin-authority-card { background: color-mix(in srgb, var(--refusal) 7%, transparent); }
+  .super-admin-shell .admin-measures { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .super-admin-shell .admin-priority-grid { display: block; }
+  .super-admin-shell .admin-trend { border-bottom: 8px solid color-mix(in srgb, var(--archive) 80%, black); }
+  .super-admin-shell .admin-today { margin-top: 8px; }
+  .super-admin-shell .admin-lower-grid { display: block; }
+  .super-admin-shell .admin-master-actions { margin-top: 8px; }
+  .super-entrance { padding-inline: 28px; }
+  .super-entrance-rail { opacity: 0.18; }
+  .super-entrance-sectors { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .super-entrance-sectors > div:nth-child(2) { border-right: 0; }
+  .super-entrance-sectors > div:nth-child(-n+2) { border-bottom: 1px solid color-mix(in srgb, var(--rule) 22%, transparent); }
+}
+
+@media (max-width: 480px) {
+  .master-status-bar { grid-template-columns: auto auto; font-size: 6px; }
+  .master-status-bar span:nth-child(2) { display: none; }
+  .super-admin-shell .admin-overview-title h1 { font-size: 46px; }
+  .super-admin-shell .admin-overview-title { padding: 34px 22px 42px; }
+  .super-admin-shell .admin-measures > div { min-height: 132px; padding: 16px 13px; }
+  .super-admin-shell .admin-attention, .super-admin-shell .admin-lower-grid, .super-admin-shell .admin-incidents { margin-inline: -6px; }
+  .super-entrance-hud span:nth-child(2) { display: none; }
+  .super-entrance-hud { grid-template-columns: auto auto; }
+  .super-entrance-title { font-size: 38px; }
+  .super-entrance-sigil { width: 164px; height: 164px; }
+  .super-entrance-sectors { margin-top: 18px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .master-status-bar i, .master-sigil { animation: none; }
+  .super-admin-shell .admin-department-list > div:hover { padding-left: 16px; }
+}
