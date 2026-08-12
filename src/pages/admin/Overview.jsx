@@ -248,7 +248,7 @@ export default function Overview() {
             <h2 id="master-actions-title" className="display">Command deck</h2>
             <nav aria-label="Super administrator shortcuts">
               <Link to="/admin/staff"><span>People and authority</span><small>Staff, access and face records</small></Link>
-              <Link to="/admin/reports"><span>Board reports</span><small>Attendance evidence and exports</small></Link>
+              <Link to="/reports"><span>Board reports</span><small>Attendance evidence and exports</small></Link>
               <Link to="/admin/settings"><span>System rules</span><small>Hours, location and thresholds</small></Link>
             </nav>
           </aside>

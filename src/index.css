@@ -2555,3 +2555,370 @@ body {
   .report-section-head > p, .report-chart-note, .instrument-reading p, .report-method { color: #4a5650 !important; }
   .report-roster .tbl th, .report-roster .tbl td { color: #101814 !important; border-color: #cad1cb !important; }
 }
+
+/* ─────────────────────────────────────────────
+   ASSISTANT, NOTICES AND DELEGATED REPORTING
+   ───────────────────────────────────────────── */
+.app-rail-tools, .app-drawer-tools { display: grid; gap: 7px; margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); }
+.assistant-launch, .notification-launch { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; align-items: center; gap: 9px; width: 100%; min-height: 42px; padding: 8px 10px; color: var(--muted); border: 1px solid var(--line); background: transparent; text-align: left; cursor: pointer; transition: color 140ms ease, border-color 140ms ease, transform 140ms ease; }
+.assistant-launch:hover, .notification-launch:hover { color: var(--paper); border-color: var(--muted); transform: translateX(2px); }
+.assistant-launch svg, .notification-launch svg { width: 18px; fill: none; stroke: currentColor; stroke-width: 1.35; }
+.assistant-launch span, .notification-launch span { font-size: 11px; }
+.assistant-launch small, .notification-launch small { font-size: 7px; letter-spacing: .1em; }
+.assistant-launch small { color: var(--refusal); }
+.notification-launch b { display: grid; min-width: 19px; height: 19px; padding-inline: 4px; place-items: center; color: var(--ledger); background: var(--refusal); font-size: 8px; font-weight: 600; }
+.notification-desk { position: relative; }
+.notification-sheet { position: fixed; z-index: 95; left: 222px; bottom: 48px; width: min(380px, calc(100vw - 242px)); max-height: 520px; overflow: auto; color: var(--archive); border: 1px solid var(--archive); background: var(--ledger); box-shadow: 10px 14px 0 color-mix(in srgb, var(--archive) 16%, transparent); animation: notice-sheet-in 180ms var(--ease-instrument) both; }
+.notification-sheet > header { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; min-height: 46px; padding: 10px 13px; color: var(--ledger); background: var(--archive); }
+.notification-sheet > header span { font-size: 8px; letter-spacing: .12em; }
+.notification-sheet > header button { width: 28px; height: 28px; color: var(--ledger); border: 1px solid color-mix(in srgb, var(--rule) 30%, transparent); background: transparent; font-size: 20px; }
+.notification-sheet > button { display: grid; grid-template-columns: 6px minmax(0, 1fr); gap: 11px; width: 100%; padding: 14px; color: var(--archive); border: 0; border-bottom: 1px solid var(--rule); background: transparent; text-align: left; cursor: pointer; }
+.notification-sheet > button:hover { background: color-mix(in srgb, var(--rule) 30%, transparent); }
+.notification-sheet > button > i { width: 6px; height: 6px; margin-top: 5px; background: var(--rule); }
+.notification-sheet > button.is-unread > i { background: var(--refusal); }
+.notification-sheet > button > span { display: grid; gap: 4px; }
+.notification-sheet strong { font-size: 12px; }
+.notification-sheet small { color: var(--muted); font-size: 10px; line-height: 1.45; }
+.notification-sheet time { color: var(--muted); font-size: 7px; letter-spacing: .07em; }
+.notification-empty { display: grid; gap: 6px; padding: 28px 18px; text-align: center; }
+.notification-empty strong { font-family: "Literata Variable", Georgia, serif; font-size: 17px; }
+.notification-empty span { color: var(--muted); font-size: 11px; }
+
+.assistant-layer { position: fixed; z-index: 120; inset: 0; }
+.assistant-scrim { position: absolute; inset: 0; width: 100%; border: 0; background: color-mix(in srgb, var(--archive) 68%, transparent); cursor: default; }
+.assistant-panel { position: absolute; top: 0; right: 0; bottom: 0; display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; width: min(620px, 100%); color: var(--archive); border-left: 1px solid var(--archive); background: var(--ledger); animation: assistant-enter 260ms var(--ease-instrument) both; }
+.assistant-head { display: grid; grid-template-columns: 54px minmax(0, 1fr) 34px; gap: 16px; align-items: start; padding: 24px; color: var(--ledger); border-bottom: 3px solid var(--bureau); background: var(--archive); }
+.assistant-insignia { position: relative; display: grid; width: 52px; height: 52px; place-items: center; border: 1px solid var(--bureau); transform: rotate(45deg); }
+.assistant-insignia i { position: absolute; width: 28px; height: 1px; background: var(--bureau); }
+.assistant-insignia i:nth-child(2) { transform: rotate(90deg); }
+.assistant-insignia i:nth-child(3) { width: 7px; height: 7px; background: var(--refusal); }
+.assistant-head > div:nth-child(2) { display: grid; gap: 6px; }
+.assistant-head span { color: var(--rule); font-size: 7px; letter-spacing: .12em; }
+.assistant-head h2 { margin: 0; font-size: clamp(26px, 4vw, 36px); }
+.assistant-head p { max-width: 440px; margin: 0; color: var(--rule); font-size: 11px; line-height: 1.5; }
+.assistant-close { width: 34px; height: 34px; color: var(--ledger); border: 1px solid color-mix(in srgb, var(--rule) 34%, transparent); background: transparent; font-size: 23px; cursor: pointer; }
+.assistant-scope { display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 8px 24px; color: var(--muted); border-bottom: 1px solid var(--rule); font-size: 7px; letter-spacing: .09em; }
+.assistant-scope i { width: 6px; height: 6px; background: var(--bureau); }
+.assistant-conversation { overflow-y: auto; padding: 24px; overscroll-behavior: contain; }
+.assistant-opening { display: grid; gap: 12px; padding: 18px 0; }
+.assistant-opening h3 { max-width: 470px; margin: 0; font-size: clamp(30px, 6vw, 45px); line-height: 1.05; }
+.assistant-opening > p { max-width: 470px; margin: 0; color: var(--muted); font-size: 13px; line-height: 1.65; }
+.assistant-starters { display: grid; margin-top: 16px; border: 1px solid var(--archive); }
+.assistant-starters button { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 10px; align-items: center; min-height: 53px; padding: 10px 13px; color: var(--archive); border: 0; border-bottom: 1px solid var(--archive); background: transparent; text-align: left; font-size: 12px; cursor: pointer; transition: padding 140ms ease, background 140ms ease; }
+.assistant-starters button:last-child { border-bottom: 0; }
+.assistant-starters button:hover { padding-left: 17px; background: color-mix(in srgb, var(--rule) 28%, transparent); }
+.assistant-starters span { color: var(--bureau); font-size: 8px; }
+.assistant-message { display: grid; gap: 8px; max-width: 90%; margin-bottom: 20px; }
+.assistant-message > span { color: var(--muted); font-size: 7px; letter-spacing: .1em; }
+.assistant-message > div { padding: 14px 16px; border: 1px solid var(--archive); }
+.assistant-message p { margin: 0 0 9px; font-size: 13px; line-height: 1.65; white-space: pre-wrap; }
+.assistant-message p:last-child { margin-bottom: 0; }
+.assistant-message.is-user { margin-left: auto; }
+.assistant-message.is-user > span { text-align: right; }
+.assistant-message.is-user > div { color: var(--ledger); border-color: var(--bureau); background: var(--bureau); }
+.assistant-message.is-assistant { margin-right: auto; }
+.assistant-reading { display: flex; align-items: center; gap: 9px; padding: 9px 0; color: var(--muted); }
+.assistant-reading i { width: 7px; height: 7px; background: var(--bureau); animation: assistant-read 900ms ease-in-out infinite; }
+.assistant-reading span { font-size: 7px; letter-spacing: .1em; }
+.assistant-error { padding: 14px; border-left: 3px solid var(--refusal); background: color-mix(in srgb, var(--refusal) 7%, var(--ledger)); }
+.assistant-error strong { font-family: "Literata Variable", Georgia, serif; }
+.assistant-error p, .assistant-error small { display: block; margin: 5px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.assistant-sources { display: grid; gap: 8px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--rule); }
+.assistant-sources > span { color: var(--muted); font-size: 7px; letter-spacing: .1em; }
+.assistant-sources > div { display: flex; flex-wrap: wrap; gap: 6px; }
+.assistant-sources a, .assistant-sources > div > span { padding: 5px 7px; color: var(--bureau); border: 1px solid var(--rule); font-size: 9px; }
+.assistant-composer { padding: 15px 18px 18px; border-top: 1px solid var(--archive); background: color-mix(in srgb, var(--rule) 28%, var(--ledger)); }
+.assistant-composer > label { display: block; margin-bottom: 7px; color: var(--muted); font-family: "IBM Plex Mono", monospace; font-size: 7px; letter-spacing: .1em; text-transform: uppercase; }
+.assistant-composer > div { display: grid; grid-template-columns: minmax(0, 1fr) 80px; border: 1px solid var(--archive); background: var(--ledger); }
+.assistant-composer textarea { min-height: 58px; padding: 12px; resize: none; color: var(--archive); border: 0; background: transparent; font-size: 13px; outline: none; }
+.assistant-composer button { color: var(--ledger); border: 0; border-left: 1px solid var(--archive); background: var(--archive); font-size: 11px; font-weight: 650; cursor: pointer; }
+.assistant-composer button:disabled { color: var(--muted); background: var(--rule); cursor: not-allowed; }
+.assistant-composer > small { display: block; margin-top: 7px; color: var(--muted); font-size: 9px; }
+
+.report-authority-line { display: grid; grid-template-columns: 150px minmax(0, 1fr) auto; gap: 16px; align-items: center; margin-top: 10px; padding: 13px 16px; color: var(--ledger); background: var(--bureau); }
+.report-authority-line > span, .report-authority-line > small { font-size: 7px; letter-spacing: .1em; }
+.report-authority-line strong { font-family: "Literata Variable", Georgia, serif; font-size: 15px; font-weight: 560; }
+.report-approvals { margin-top: 10px; border: 1px solid var(--archive); background: var(--ledger); }
+.report-approvals-toggle { display: flex; align-items: center; justify-content: space-between; gap: 18px; width: 100%; min-height: 70px; padding: 13px 17px; color: var(--archive); border: 0; background: transparent; text-align: left; cursor: pointer; }
+.report-approvals-toggle > span:first-child { display: grid; gap: 4px; }
+.report-approvals-toggle small, .report-approvals-toggle > span:last-child { color: var(--muted); font-size: 7px; letter-spacing: .1em; }
+.report-approvals-toggle strong { font-family: "Literata Variable", Georgia, serif; font-size: 17px; }
+.report-approvals.is-open .report-approvals-toggle { color: var(--ledger); background: var(--archive); }
+.report-approvals-body { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; padding: 20px; border-top: 1px solid var(--archive); }
+.report-approvals-body > .panel { grid-column: 1 / -1; }
+.report-approvals-body > div { min-width: 0; }
+.report-approvals-body .eyebrow { display: block; margin-bottom: 10px; }
+.report-approvals-body > div > button { display: grid; grid-template-columns: minmax(150px, .8fr) minmax(0, 1.2fr) 20px; gap: 10px; align-items: center; width: 100%; min-height: 70px; padding: 10px; color: var(--archive); border: 1px solid var(--rule); border-bottom: 0; background: transparent; text-align: left; }
+.report-approvals-body > div > button:last-of-type { border-bottom: 1px solid var(--rule); }
+.report-approvals-body > div > button.is-selected { box-shadow: inset 3px 0 0 var(--bureau); background: color-mix(in srgb, var(--bureau) 5%, transparent); }
+.report-approvals-body > div > button > span { display: grid; gap: 4px; }
+.report-approvals-body > div > button strong { font-size: 11px; }
+.report-approvals-body > div > button small { color: var(--muted); font-size: 7px; }
+.report-approvals-body > div > button p { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.4; }
+.report-active-appointment { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 60px; padding: 10px; border: 1px solid var(--rule); border-bottom: 0; }
+.report-active-appointment:last-of-type { border-bottom: 1px solid var(--rule); }
+.report-active-appointment > span { display: grid; gap: 4px; }
+.report-active-appointment strong { font-size: 11px; }
+.report-active-appointment small { color: var(--muted); font-size: 7px; }
+.report-active-appointment button { padding: 6px 8px; color: var(--refusal); border: 1px solid var(--refusal); background: transparent; font-size: 9px; }
+.report-approval-empty { color: var(--muted); font-size: 11px; }
+.report-decision { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(180px, .45fr); gap: 9px 14px; padding: 17px; border: 1px solid var(--archive); }
+.report-decision > span { grid-column: 1 / -1; color: var(--bureau); font-size: 7px; letter-spacing: .1em; }
+.report-decision label:first-of-type { grid-column: 1; }
+.report-decision textarea { grid-column: 1; grid-row: 3 / span 2; }
+.report-decision label:nth-of-type(2), .report-decision input { grid-column: 2; }
+.report-decision > div { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+
+.report-locked { max-width: 1180px; margin-inline: auto; border: 1px solid var(--archive); background: var(--ledger); animation: report-entry 340ms var(--ease-instrument) both; }
+.report-locked > header { display: flex; align-items: center; justify-content: space-between; min-height: 84px; padding: 17px 24px; color: var(--ledger); border-bottom: 4px solid var(--review); background: var(--archive); }
+.report-locked > header > span { font-size: 8px; letter-spacing: .12em; }
+.report-lock-mark { position: relative; display: grid; width: 46px; height: 46px; place-items: center; border: 1px solid var(--review); }
+.report-lock-mark i { position: absolute; width: 22px; height: 1px; background: var(--review); }
+.report-lock-mark i:nth-child(2) { transform: rotate(90deg); }
+.report-lock-mark i:nth-child(3) { width: 7px; height: 7px; background: var(--review); }
+.report-locked-body { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(320px, .75fr); }
+.report-locked-body > div { padding: clamp(30px, 6vw, 72px); }
+.report-locked-body h1 { max-width: 760px; margin: 14px 0 18px; font-size: clamp(42px, 6vw, 72px); line-height: .98; }
+.report-locked-body > div > p { max-width: 670px; color: var(--muted); font-size: 14px; line-height: 1.7; }
+.report-locked-body ol { margin: 34px 0 0; padding: 0; border-top: 1px solid var(--archive); list-style: none; }
+.report-locked-body li { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 10px; padding: 13px 0; border-bottom: 1px solid var(--rule); }
+.report-locked-body li span { color: var(--bureau); font-size: 8px; }
+.report-locked-body li strong { font-size: 12px; font-weight: 600; }
+.report-locked-body > aside { display: flex; flex-direction: column; justify-content: center; gap: 11px; padding: clamp(24px, 4vw, 46px); border-left: 1px solid var(--archive); background: color-mix(in srgb, var(--rule) 28%, var(--ledger)); }
+.report-locked-body > aside > span { color: var(--muted); font-size: 7px; letter-spacing: .1em; }
+.report-locked-body > aside > strong { font-family: "Literata Variable", Georgia, serif; font-size: 29px; }
+.report-locked-body > aside > small { color: var(--bureau); font-family: "IBM Plex Mono", monospace; font-size: 8px; text-transform: uppercase; }
+.report-locked-body aside form { display: grid; gap: 9px; margin-top: 18px; }
+.report-locked-body aside form button { margin-top: 6px; }
+.report-request-pending { margin: 18px 0 0; padding: 14px; color: var(--muted); border-left: 3px solid var(--review); font-size: 12px; line-height: 1.5; }
+.report-locked > footer { padding: 13px 22px; color: var(--muted); border-top: 1px solid var(--archive); font-size: 7px; letter-spacing: .08em; }
+
+/* ─────────────────────────────────────────────
+   SETTINGS AND DEPARTMENT REGISTRY
+   ───────────────────────────────────────────── */
+.settings-command { width: min(100%, 1320px); margin-inline: auto; animation: settings-enter 340ms var(--ease-instrument) both; }
+.settings-command-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(270px, 31%); min-height: 280px; color: var(--archive); border: 1px solid var(--archive); background: var(--ledger); }
+.settings-command-head > div { align-self: end; padding: clamp(30px, 5vw, 66px); }
+.settings-reference { margin-bottom: 54px; color: var(--bureau); font-size: 8px; letter-spacing: .12em; }
+.settings-command-head h1 { max-width: 850px; margin: 14px 0 17px; font-size: clamp(48px, 6.5vw, 78px); line-height: .96; }
+.settings-command-head p { max-width: 690px; margin: 0; color: var(--muted); font-size: 14px; line-height: 1.65; }
+.settings-command-head > aside { display: flex; flex-direction: column; justify-content: end; gap: 15px; padding: clamp(26px, 4vw, 48px); color: var(--ledger); border-left: 1px solid var(--archive); background: var(--bureau); }
+.settings-command-head > aside span, .settings-command-head > aside small { font-size: 8px; letter-spacing: .12em; }
+.settings-command-head > aside strong { font-family: "Literata Variable", Georgia, serif; font-size: clamp(25px, 3vw, 37px); line-height: 1.1; }
+.settings-command-head > aside small { padding-top: 15px; border-top: 1px solid color-mix(in srgb, var(--ledger) 35%, transparent); }
+.settings-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 10px; border: 1px solid var(--archive); }
+.settings-tabs button { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 4px 10px; padding: 17px; color: var(--archive); border: 0; border-right: 1px solid var(--archive); background: var(--ledger); text-align: left; cursor: pointer; }
+.settings-tabs button:last-child { border-right: 0; }
+.settings-tabs button > span { grid-row: span 2; color: var(--bureau); font-size: 8px; }
+.settings-tabs strong { font-family: "Literata Variable", Georgia, serif; font-size: 17px; }
+.settings-tabs small { color: var(--muted); font-size: 10px; }
+.settings-tabs button.is-active { color: var(--ledger); background: var(--archive); }
+.settings-tabs button.is-active span { color: var(--refusal); }
+.settings-message { margin-top: 10px; }
+.settings-instrument { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 10px; }
+.settings-sheet { padding: clamp(22px, 3vw, 34px); border: 1px solid var(--archive); background: var(--ledger); }
+.settings-sheet > header { min-height: 150px; padding-bottom: 22px; border-bottom: 1px solid var(--archive); }
+.settings-sheet > header > span { color: var(--bureau); font-size: 8px; letter-spacing: .1em; }
+.settings-sheet > header h2 { max-width: 520px; margin: 12px 0 10px; font-size: clamp(28px, 4vw, 40px); }
+.settings-sheet > header p { max-width: 580px; margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.settings-coordinate-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 22px; }
+.settings-coordinate-grid button { grid-column: 1 / -1; }
+.settings-rule-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; margin-top: 20px; }
+.settings-rule-grid label > div, .settings-hours-grid label > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; border: 1px solid var(--line); }
+.settings-rule-grid label > div .field, .settings-hours-grid label > div .field { border: 0; }
+.settings-rule-grid b, .settings-hours-grid b { display: grid; padding: 0 10px; place-items: center; color: var(--muted); border-left: 1px solid var(--line); font-size: 7px; letter-spacing: .08em; }
+.settings-rule-grid label > small { display: block; margin-top: 6px; color: var(--muted); font-size: 10px; line-height: 1.4; }
+.settings-hours-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 22px; }
+.settings-sheet.is-thresholds { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(300px, .65fr) minmax(0, 1.35fr); gap: 30px; }
+.settings-sheet.is-thresholds > header { min-height: 0; border-bottom: 0; border-right: 1px solid var(--archive); padding: 0 30px 0 0; }
+.settings-threshold-warning { grid-column: 2; display: grid; grid-template-columns: 8px minmax(0, 1fr); gap: 14px; padding: 14px; border: 1px solid var(--review); }
+.settings-threshold-warning > i { width: 8px; height: 8px; margin-top: 5px; background: var(--review); }
+.settings-threshold-warning strong { font-family: "Literata Variable", Georgia, serif; font-size: 16px; }
+.settings-threshold-warning p { margin: 4px 0 0; color: var(--muted); font-size: 11px; }
+.settings-threshold-grid { grid-column: 2; display: grid; gap: 20px; }
+.settings-threshold-grid label > span { display: flex; align-items: end; justify-content: space-between; gap: 14px; }
+.settings-threshold-grid label > span b { font-size: 11px; }
+.settings-threshold-grid label > span strong { color: var(--bureau); font-size: 20px; }
+.settings-threshold-grid input { width: 100%; margin: 15px 0 6px; accent-color: var(--bureau); }
+.settings-threshold-grid label > small { display: flex; justify-content: space-between; color: var(--muted); font-size: 7px; letter-spacing: .1em; }
+.settings-threshold-grid label > small i { font-style: normal; }
+.settings-save { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 18px 20px; color: var(--ledger); background: var(--archive); }
+.settings-save > div { display: grid; gap: 5px; }
+.settings-save span { color: var(--rule); font-size: 7px; letter-spacing: .1em; }
+.settings-save strong { font-family: "Literata Variable", Georgia, serif; font-size: 17px; }
+.settings-directory-loading { display: grid; min-height: 440px; margin-top: 10px; place-items: center; border: 1px solid var(--archive); }
+.department-registry { margin-top: 10px; border: 1px solid var(--archive); background: var(--ledger); }
+.department-registry > header { display: flex; align-items: end; justify-content: space-between; gap: 28px; min-height: 190px; padding: clamp(24px, 4vw, 44px); color: var(--ledger); border-bottom: 3px solid var(--bureau); background: var(--archive); }
+.department-registry > header > div { max-width: 760px; }
+.department-registry > header span { color: var(--rule); font-size: 8px; letter-spacing: .1em; }
+.department-registry > header h2 { margin: 12px 0 9px; font-size: clamp(32px, 5vw, 50px); }
+.department-registry > header p { margin: 0; color: var(--rule); font-size: 12px; line-height: 1.6; }
+.department-register-head, .department-register > button { display: grid; grid-template-columns: 80px minmax(280px, 1fr) 70px 100px 20px; gap: 13px; align-items: center; }
+.department-register-head { padding: 10px 16px; color: var(--muted); border-bottom: 1px solid var(--archive); font-size: 7px; letter-spacing: .1em; }
+.department-register > button { width: 100%; min-height: 78px; padding: 12px 16px; color: var(--archive); border: 0; border-bottom: 1px solid var(--rule); background: transparent; text-align: left; cursor: pointer; transition: padding 140ms ease, background 140ms ease; }
+.department-register > button:hover, .department-register > button.is-selected { padding-left: 21px; background: color-mix(in srgb, var(--rule) 28%, transparent); }
+.department-register > button > span:nth-child(2) { display: grid; gap: 4px; }
+.department-register > button b { font-family: "Literata Variable", Georgia, serif; font-size: 15px; font-weight: 570; }
+.department-register > button small { overflow: hidden; color: var(--muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.department-register > button > i { color: var(--bureau); font-style: normal; }
+.department-editor { border-top: 3px solid var(--bureau); animation: department-editor-in 210ms var(--ease-instrument) both; }
+.department-editor > header { display: flex; align-items: start; justify-content: space-between; gap: 20px; padding: 24px; color: var(--ledger); background: var(--archive); }
+.department-editor > header > div { display: grid; gap: 7px; }
+.department-editor h2 { margin: 0; font-size: 32px; }
+.department-editor header small { color: var(--rule); font-size: 7px; letter-spacing: .09em; }
+.department-editor header > button { width: 34px; height: 34px; color: var(--ledger); border: 1px solid var(--rule); background: transparent; font-size: 22px; }
+.department-editor form { padding: clamp(22px, 4vw, 40px); }
+.department-editor-grid { display: grid; grid-template-columns: minmax(0, 1fr) 180px; gap: 16px; }
+.department-editor-grid .is-wide { grid-column: 1 / -1; }
+.department-editor textarea { resize: vertical; }
+.department-editor-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 19px; }
+.department-delete-note { margin: 12px 0 0; color: var(--muted); font-size: 10px; }
+
+.today-report-access { display: grid; grid-template-columns: 160px minmax(0, 1fr) auto; gap: 24px; align-items: center; margin-top: 14px; padding: 22px; color: var(--archive); border: 1px solid var(--archive); background: var(--ledger); }
+.today-report-access.is-locked { border-left: 4px solid var(--review); }
+.today-report-access.is-open { border-left: 4px solid var(--bureau); }
+.today-report-access-index { align-self: stretch; padding-right: 18px; color: var(--muted); border-right: 1px solid var(--archive); font-size: 8px; letter-spacing: .1em; }
+.today-report-access h2 { margin: 7px 0 5px; font-size: 24px; }
+.today-report-access p { max-width: 660px; margin: 0; color: var(--muted); font-size: 11px; line-height: 1.55; }
+.today-report-access-actions { display: flex; gap: 8px; }
+
+.today-absence-desk { margin-top: 14px; color: var(--archive); border: 1px solid var(--archive); background: var(--ledger); }
+.today-absence-toggle { display: grid; grid-template-columns: 180px minmax(0, 1fr) auto; gap: 22px; align-items: center; width: 100%; min-height: 118px; padding: 20px 22px; color: var(--archive); border: 0; background: transparent; text-align: left; cursor: pointer; }
+.today-absence-toggle > span { align-self: stretch; padding-right: 18px; color: var(--muted); border-right: 1px solid var(--archive); font-size: 8px; letter-spacing: .1em; }
+.today-absence-toggle > div { display: grid; gap: 6px; }
+.today-absence-toggle h2 { margin: 0; font-size: 24px; }
+.today-absence-toggle p { max-width: 720px; margin: 0; color: var(--muted); font-size: 11px; line-height: 1.55; }
+.today-absence-toggle > strong { color: var(--bureau); font-size: 8px; letter-spacing: .1em; }
+.today-absence-desk.is-open .today-absence-toggle { color: var(--ledger); background: var(--archive); }
+.today-absence-desk.is-open .today-absence-toggle > span { color: var(--rule); border-color: var(--super-rule); }
+.today-absence-desk.is-open .today-absence-toggle p { color: var(--rule); }
+.today-absence-desk.is-open .today-absence-toggle > strong { color: var(--review); }
+.today-absence-body { padding: 20px; border-top: 3px solid var(--review); }
+.today-absence-body > .panel { margin-bottom: 14px; }
+.absence-request-grid, .absence-review-grid { display: grid; grid-template-columns: minmax(260px, .72fr) minmax(0, 1.28fr); gap: 22px; }
+.absence-request-grid > div, .absence-review-grid > div, .absence-review-grid > aside { padding-right: 22px; border-right: 1px solid var(--archive); }
+.absence-request-grid > div > .eyebrow, .absence-review-grid > div > .eyebrow { display: block; margin-bottom: 12px; }
+.absence-latest { display: grid; gap: 10px; padding: 15px; border: 1px solid var(--rule); }
+.absence-latest .pill { justify-self: start; }
+.absence-latest > strong { font-size: 9px; }
+.absence-latest p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.absence-empty { color: var(--muted); font-size: 11px; }
+.absence-request-grid > form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.absence-request-grid form .is-wide { grid-column: 1 / -1; }
+.absence-request-grid textarea, .absence-review-grid textarea { resize: vertical; }
+.absence-review-grid > div > button { display: grid; grid-template-columns: minmax(160px, .75fr) auto; gap: 8px 12px; width: 100%; min-height: 92px; padding: 12px; color: var(--archive); border: 1px solid var(--rule); border-bottom: 0; background: transparent; text-align: left; }
+.absence-review-grid > div > button:last-of-type { border-bottom: 1px solid var(--rule); }
+.absence-review-grid > div > button.is-selected { box-shadow: inset 3px 0 0 var(--review); background: color-mix(in srgb, var(--review) 6%, transparent); }
+.absence-review-grid > div > button > span { display: grid; gap: 4px; }
+.absence-review-grid > div > button span strong { font-size: 11px; }
+.absence-review-grid > div > button span small { color: var(--muted); font-size: 7px; }
+.absence-review-grid > div > button > b { color: var(--review); font-size: 7px; }
+.absence-review-grid > div > button > p { grid-column: 1 / -1; margin: 0; color: var(--muted); font-size: 10px; line-height: 1.45; }
+.absence-review-grid > form { display: grid; gap: 9px; }
+.absence-review-grid > form > span { color: var(--review); font-size: 7px; letter-spacing: .1em; }
+.absence-review-grid > form > strong { font-family: "Literata Variable", Georgia, serif; font-size: 22px; }
+.absence-review-grid > form > p { margin: 0 0 8px; color: var(--muted); font-size: 10px; text-transform: capitalize; }
+.absence-review-grid > form > div { display: flex; flex-wrap: wrap; gap: 8px; }
+.absence-review-grid > aside { display: flex; flex-direction: column; justify-content: center; gap: 8px; }
+.absence-review-grid > aside strong { font-size: 23px; }
+.absence-review-grid > aside p { max-width: 390px; margin: 0; color: var(--muted); font-size: 11px; line-height: 1.55; }
+
+.super-admin-shell .app-rail-tools { border-color: var(--super-rule); }
+.super-admin-shell .assistant-launch, .super-admin-shell .notification-launch { border-color: var(--super-rule); }
+.super-admin-shell .report-authority-line { background: var(--refusal); }
+.super-admin-shell .report-approvals, .super-admin-shell .report-locked, .super-admin-shell .settings-command-head, .super-admin-shell .settings-tabs, .super-admin-shell .settings-sheet, .super-admin-shell .department-registry, .super-admin-shell .today-report-access, .super-admin-shell .today-absence-desk { color: var(--ledger); border-color: var(--super-rule); background: var(--super-panel); }
+.super-admin-shell .report-approvals-toggle { color: var(--ledger); }
+.super-admin-shell .report-approvals.is-open .report-approvals-toggle, .super-admin-shell .report-locked > header, .super-admin-shell .settings-tabs button.is-active, .super-admin-shell .department-registry > header, .super-admin-shell .department-editor > header { background: color-mix(in srgb, var(--archive) 80%, black); }
+.super-admin-shell .report-approvals-body, .super-admin-shell .report-decision, .super-admin-shell .report-locked-body > aside, .super-admin-shell .report-locked > footer, .super-admin-shell .settings-sheet > header, .super-admin-shell .settings-sheet.is-thresholds > header, .super-admin-shell .department-register-head, .super-admin-shell .department-editor { border-color: var(--super-rule); }
+.super-admin-shell .report-approvals-body > div > button, .super-admin-shell .report-active-appointment, .super-admin-shell .settings-tabs button, .super-admin-shell .department-register > button { color: var(--ledger); border-color: var(--super-rule); background: transparent; }
+.super-admin-shell .settings-tabs button.is-active span, .super-admin-shell .settings-reference, .super-admin-shell .settings-sheet > header > span, .super-admin-shell .department-register > button > i { color: var(--refusal); }
+.super-admin-shell .settings-command-head > aside { background: var(--refusal); }
+.super-admin-shell .settings-sheet .field, .super-admin-shell .department-editor .field, .super-admin-shell .report-decision .field, .super-admin-shell .report-locked .field { color-scheme: dark; color: var(--ledger); border-color: var(--super-rule); background: var(--super-raised); }
+.super-admin-shell .settings-rule-grid label > div, .super-admin-shell .settings-hours-grid label > div, .super-admin-shell .settings-rule-grid b, .super-admin-shell .settings-hours-grid b { border-color: var(--super-rule); }
+.super-admin-shell .settings-save { background: color-mix(in srgb, var(--archive) 80%, black); }
+.super-admin-shell .today-absence-toggle { color: var(--ledger); }
+.super-admin-shell .today-absence-toggle > span, .super-admin-shell .absence-request-grid > div, .super-admin-shell .absence-review-grid > div, .super-admin-shell .absence-review-grid > aside { border-color: var(--super-rule); }
+.super-admin-shell .today-absence-desk.is-open .today-absence-toggle { background: color-mix(in srgb, var(--archive) 80%, black); }
+.super-admin-shell .absence-review-grid > div > button { color: var(--ledger); border-color: var(--super-rule); }
+.super-admin-shell .today-absence-body .field { color-scheme: dark; color: var(--ledger); border-color: var(--super-rule); background: var(--super-raised); }
+
+@keyframes assistant-enter { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: none; } }
+@keyframes assistant-read { 50% { opacity: .25; transform: scale(.72); } }
+@keyframes notice-sheet-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes settings-enter { from { opacity: 0; transform: translateY(9px); } to { opacity: 1; transform: none; } }
+@keyframes department-editor-in { from { opacity: 0; transform: translateY(-7px); } to { opacity: 1; transform: none; } }
+
+@media (max-width: 980px) {
+  .notification-sheet { left: 16px; bottom: 16px; width: calc(100vw - 32px); }
+  .report-locked-body { grid-template-columns: minmax(0, 1fr); }
+  .report-locked-body > aside { border-top: 1px solid var(--archive); border-left: 0; }
+  .report-approvals-body { grid-template-columns: minmax(0, 1fr); }
+  .report-decision { grid-column: auto; }
+  .settings-command-head { grid-template-columns: minmax(0, 1fr); }
+  .settings-command-head > aside { border-top: 1px solid var(--archive); border-left: 0; }
+  .settings-instrument { grid-template-columns: minmax(0, 1fr); }
+  .settings-sheet.is-thresholds { grid-column: auto; }
+  .settings-save { grid-column: auto; }
+  .today-report-access { grid-template-columns: 120px minmax(0, 1fr); }
+  .today-report-access-actions { grid-column: 2; }
+  .today-absence-toggle { grid-template-columns: 140px minmax(0, 1fr); }
+  .today-absence-toggle > strong { grid-column: 2; }
+}
+
+@media (max-width: 700px) {
+  .assistant-head { grid-template-columns: 42px minmax(0, 1fr) 32px; gap: 12px; padding: 18px 16px; }
+  .assistant-insignia { width: 40px; height: 40px; }
+  .assistant-head p { display: none; }
+  .assistant-scope { padding-inline: 16px; }
+  .assistant-conversation { padding: 18px 16px; }
+  .assistant-message { max-width: 96%; }
+  .assistant-composer { padding: 12px; }
+  .report-authority-line { grid-template-columns: minmax(0, 1fr); gap: 5px; }
+  .report-authority-line > span { color: color-mix(in srgb, var(--ledger) 70%, transparent); }
+  .report-approvals-toggle { align-items: start; flex-direction: column; }
+  .report-decision { grid-template-columns: minmax(0, 1fr); }
+  .report-decision label, .report-decision textarea, .report-decision input, .report-decision label:first-of-type, .report-decision label:nth-of-type(2), .report-decision > div { grid-column: 1; grid-row: auto; }
+  .report-locked > header { padding: 14px 16px; }
+  .report-locked-body > div, .report-locked-body > aside { padding: 27px 20px; }
+  .report-locked-body h1 { font-size: 43px; }
+  .settings-command-head > div { padding: 34px 22px; }
+  .settings-reference { margin-bottom: 40px; }
+  .settings-command-head h1 { font-size: 47px; }
+  .settings-command-head > aside { padding: 25px 22px; }
+  .settings-tabs { grid-template-columns: minmax(0, 1fr); }
+  .settings-tabs button { border-right: 0; border-bottom: 1px solid var(--archive); }
+  .settings-tabs button:last-child { border-bottom: 0; }
+  .settings-coordinate-grid, .settings-rule-grid, .settings-hours-grid { grid-template-columns: minmax(0, 1fr); }
+  .settings-sheet.is-thresholds { display: block; }
+  .settings-sheet.is-thresholds > header { padding: 0 0 20px; border-right: 0; border-bottom: 1px solid var(--archive); }
+  .settings-threshold-warning { margin-top: 20px; }
+  .settings-threshold-grid { margin-top: 22px; }
+  .settings-save { align-items: stretch; flex-direction: column; }
+  .department-registry > header { align-items: stretch; flex-direction: column; }
+  .department-register-head { display: none; }
+  .department-register { display: grid; gap: 9px; padding: 9px; }
+  .department-register > button { grid-template-columns: 60px minmax(0, 1fr) 18px; gap: 8px; min-height: 112px; padding: 14px; border: 1px solid var(--archive); }
+  .department-register > button:hover, .department-register > button.is-selected { padding-left: 18px; }
+  .department-register > button > span:nth-child(2) { grid-column: 2 / 4; }
+  .department-register > button > strong:nth-child(3) { grid-column: 2; }
+  .department-register > button > span:nth-child(4) { grid-column: 2; }
+  .department-register > button > i { grid-column: 3; grid-row: 3; }
+  .department-editor-grid { grid-template-columns: minmax(0, 1fr); }
+  .department-editor-grid .is-wide { grid-column: auto; }
+  .today-report-access { grid-template-columns: minmax(0, 1fr); padding: 18px; }
+  .today-report-access-index { padding: 0 0 12px; border-right: 0; border-bottom: 1px solid var(--archive); }
+  .today-report-access-actions { grid-column: auto; align-items: stretch; flex-direction: column; }
+  .today-absence-toggle { grid-template-columns: minmax(0, 1fr); padding: 18px; }
+  .today-absence-toggle > span { padding: 0 0 12px; border-right: 0; border-bottom: 1px solid var(--archive); }
+  .today-absence-toggle > strong { grid-column: auto; }
+  .absence-request-grid, .absence-review-grid { grid-template-columns: minmax(0, 1fr); }
+  .absence-request-grid > div, .absence-review-grid > div, .absence-review-grid > aside { padding: 0 0 20px; border-right: 0; border-bottom: 1px solid var(--archive); }
+  .absence-request-grid > form { grid-template-columns: minmax(0, 1fr); }
+  .absence-request-grid form .is-wide { grid-column: auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .assistant-panel, .notification-sheet, .settings-command, .department-editor, .report-locked { animation: none; }
+  .assistant-reading i { animation: none; }
+  .assistant-launch:hover, .notification-launch:hover, .assistant-starters button:hover, .department-register > button:hover { transform: none; }
+}

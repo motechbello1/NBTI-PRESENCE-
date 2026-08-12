@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { authorityBadgeFor, isSuperAdmin } from "../lib/authority";
+import { listMyNotifications, markNotificationRead } from "../lib/db";
+import PresenceAssistant from "./PresenceAssistant";
 
 /* ── SHELL ────────────────────────────────────────────── */
 
@@ -10,13 +12,14 @@ const ADMIN_LINKS = [
   ["/admin/register", "Register"],
   ["/admin/staff", "Staff"],
   ["/admin/flags", "Incidents"],
-  ["/admin/reports", "Reports"],
+  ["/reports", "Reports"],
   ["/admin/settings", "Settings"],
 ];
 
 const STAFF_LINKS = [
   ["/", "Today"],
   ["/history", "My record"],
+  ["/reports", "Reports"],
   ["/profile", "Profile"],
 ];
 
@@ -24,6 +27,7 @@ export function Shell({ children }) {
   const { profile, isAdmin, signOutOfApp } = useAuth();
   const nav = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [assistantOpen, setAssistantOpen] = useState(false);
   const links = isAdmin ? ADMIN_LINKS : STAFF_LINKS;
   const superAdmin = isSuperAdmin(profile);
   const badge = superAdmin ? { kind: "super", label: "Developer super admin" } : authorityBadgeFor(profile);
@@ -55,6 +59,13 @@ export function Shell({ children }) {
         <div className="app-rail-section mono">{isAdmin ? "Administration" : "Staff register"}</div>
         {navigation()}
 
+        <div className="app-rail-tools">
+          <NotificationDesk userId={profile?.id} onNavigate={nav} />
+          <button type="button" className="assistant-launch" onClick={() => setAssistantOpen(true)}>
+            <AssistantGlyph /><span>Ask Presence</span><small className="mono">AI</small>
+          </button>
+        </div>
+
         <div className="app-identity">
           <div className="app-identity-name">{profile?.full_name}<AuthorityBadge badge={badge} compact /></div>
           <div className="mono app-identity-code">{isAdmin ? "Administrator" : profile?.staff_id || "Staff"}</div>
@@ -85,6 +96,10 @@ export function Shell({ children }) {
               </button>
             </div>
             {navigation(true)}
+            <div className="app-drawer-tools">
+              <NotificationDesk userId={profile?.id} onNavigate={(path) => { setMenuOpen(false); nav(path); }} />
+              <button type="button" className="assistant-launch" onClick={() => { setMenuOpen(false); setAssistantOpen(true); }}><AssistantGlyph /><span>Ask Presence</span><small className="mono">AI</small></button>
+            </div>
             <div className="app-drawer-identity">
               <span>{profile?.full_name}<AuthorityBadge badge={badge} compact /></span>
               <span className="mono">{profile?.staff_id || (isAdmin ? "Administrator" : "Staff")}</span>
@@ -98,6 +113,55 @@ export function Shell({ children }) {
         <main className="app-content">{children}</main>
         <footer className="app-footer mono">NBTI Presence · ICT-managed attendance instrument</footer>
       </div>
+      <PresenceAssistant open={assistantOpen} onClose={() => setAssistantOpen(false)} />
+    </div>
+  );
+}
+
+function AssistantGlyph() {
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" /><path d="M12 1v5M12 18v5M1 12h5M18 12h5M9 12h6M12 9v6" /></svg>;
+}
+
+function NotificationDesk({ userId, onNavigate }) {
+  const [items, setItems] = useState([]);
+  const [open, setOpen] = useState(false);
+  const load = useCallback(() => {
+    if (!userId) return;
+    listMyNotifications(userId).then(setItems).catch(() => setItems([]));
+  }, [userId]);
+
+  useEffect(() => {
+    load();
+    const timer = window.setInterval(load, 60000);
+    return () => window.clearInterval(timer);
+  }, [load]);
+
+  const unread = items.filter((item) => !item.read_at).length;
+  async function openItem(item) {
+    if (!item.read_at) {
+      await markNotificationRead(item.id).catch(() => {});
+      setItems((current) => current.map((entry) => entry.id === item.id ? { ...entry, read_at: new Date().toISOString() } : entry));
+    }
+    setOpen(false);
+    if (item.action_url) onNavigate(item.action_url);
+  }
+
+  return (
+    <div className="notification-desk">
+      <button type="button" className="notification-launch" onClick={() => setOpen((value) => !value)} aria-expanded={open} aria-label={`${unread} unread notifications`}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 16.5v-6a5.5 5.5 0 0111 0v6l2 2h-15zM10 21h4" /></svg>
+        <span>Notifications</span>{unread ? <b className="mono">{unread}</b> : <small className="mono">CLEAR</small>}
+      </button>
+      {open ? (
+        <div className="notification-sheet">
+          <header><span className="mono">STAFF NOTICES</span><button type="button" onClick={() => setOpen(false)} aria-label="Close notifications">×</button></header>
+          {items.length ? items.map((item) => (
+            <button type="button" key={item.id} className={item.read_at ? "is-read" : "is-unread"} onClick={() => openItem(item)}>
+              <i /><span><strong>{item.title}</strong><small>{item.body}</small><time className="mono">{new Date(item.created_at).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</time></span>
+            </button>
+          )) : <div className="notification-empty"><strong>No notices yet</strong><span>Approvals and attendance messages will appear here.</span></div>}
+        </div>
+      ) : null}
     </div>
   );
 }

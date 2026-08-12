@@ -171,6 +171,7 @@ function PersonnelEditor({ person, departments, saving, currentUserId, onClose, 
   const [department, setDepartment] = useState(person.departments?.id || "");
   const [grade, setGrade] = useState(person.grade_level || "");
   const [role, setRole] = useState(person.role || "staff");
+  const [authority, setAuthority] = useState(person.authority_level || "");
   const self = person.id === currentUserId;
   const badge = authorityBadgeFor(person);
 
@@ -181,7 +182,7 @@ function PersonnelEditor({ person, departments, saving, currentUserId, onClose, 
 
   function saveStanding(event) {
     event.preventDefault();
-    onPatch(person.id, { department_id: department || null, grade_level: grade || null, role }, "standing");
+    onPatch(person.id, { department_id: department || null, grade_level: grade || null, role, authority_level: authority || null }, "standing");
   }
 
   return (
@@ -249,6 +250,17 @@ function PersonnelEditor({ person, departments, saving, currentUserId, onClose, 
                 </select>
                 <small className="personnel-field-help">{self ? "Your own root access cannot be removed here." : "Full administrator can read and manage every Board record."}</small>
               </div>
+              <div>
+                <label className="label" htmlFor="personnel-authority">Institutional authority</label>
+                <select id="personnel-authority" className="field" value={authority} onChange={(event) => setAuthority(event.target.value)} disabled={self}>
+                  <option value="">Standard staff</option>
+                  <option value="hod">Head of department</option>
+                  <option value="director">Director</option>
+                  <option value="dg">Director-General</option>
+                  {person.authority_level === "super_admin" ? <option value="super_admin">Developer super admin</option> : null}
+                </select>
+                <small className="personnel-field-help">Directors and HODs receive report authority only for the department selected here. The Director-General receives Board scope.</small>
+              </div>
             </div>
             <div className="personnel-editor-form-actions">
               <button type="submit" className="btn btn-primary" disabled={saving}>Save standing</button>
@@ -271,7 +283,7 @@ function PersonnelEditor({ person, departments, saving, currentUserId, onClose, 
           {self ? <p>Your own developer super-admin account is protected from accidental deactivation.</p> : null}
         </aside>
       </div>
-      <footer className="mono"><i />HOD, DIRECTOR AND DEPARTMENT FUNCTION CONTROLS AWAIT THE SECURITY MIGRATION · ISSUE 01</footer>
+      <footer className="mono"><i />AUTHORITY CHANGES ARE AUDITED · REPORT APPOINTMENTS EXPIRE AND CAN BE WITHDRAWN</footer>
     </section>
   );
 }

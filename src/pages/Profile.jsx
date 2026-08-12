@@ -9,7 +9,7 @@ export default function Profile() {
   const { session, profile, refresh } = useAuth();
   const [enrolling, setEnrolling] = useState(false);
   const [confirmingRedo, setConfirmingRedo] = useState(false);
-  const [form, setForm] = useState({ phone: profile?.phone || "", grade_level: profile?.grade_level || "" });
+  const [form, setForm] = useState({ phone: profile?.phone || "" });
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -83,6 +83,10 @@ export default function Profile() {
                     <label htmlFor="profile-department">Department</label>
                     <input id="profile-department" value={profile?.departments?.name || "—"} disabled />
                   </div>
+                  <div className="profile-field is-locked">
+                    <label htmlFor="profile-grade">Grade level</label>
+                    <input id="profile-grade" value={profile?.grade_level || "—"} disabled />
+                  </div>
                 </div>
                 <p>Contact the ICT department to correct a controlled field.</p>
               </fieldset>
@@ -93,10 +97,6 @@ export default function Profile() {
                   <div className="profile-field">
                     <label htmlFor="profile-phone">Phone number</label>
                     <input id="profile-phone" inputMode="tel" autoComplete="tel" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} />
-                  </div>
-                  <div className="profile-field">
-                    <label htmlFor="profile-grade">Grade level</label>
-                    <input id="profile-grade" value={form.grade_level} onChange={(event) => setForm({ ...form, grade_level: event.target.value })} placeholder="CONRAISS 09" />
                   </div>
                 </div>
               </fieldset>

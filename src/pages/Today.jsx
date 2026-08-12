@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { Shell, Notice, Pill, StatusPill, Spinner, AuthorityBadge } from "../components/UI";
 const VerifyFlow = lazy(() => import("../components/VerifyFlow"));
 import { getTodayRecord, signIn, signOut } from "../lib/db";
+import { decideAbsence, getReportCapabilities, requestAbsence } from "../lib/intelligence";
 
 const timeOf = (iso) =>
   iso ? new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : "—";
@@ -16,14 +17,20 @@ export default function Today() {
   const [reason, setReason] = useState("");
   const [error, setError] = useState(null);
   const [saved, setSaved] = useState(null);
+  const [capabilities, setCapabilities] = useState(null);
 
   const load = () =>
     getTodayRecord(session.user.id)
       .then(setRecord)
       .catch(() => {})
       .finally(() => setLoading(false));
+  const loadCapabilities = () => getReportCapabilities().then(setCapabilities).catch(() => {});
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
+  useEffect(() => {
+    load();
+    loadCapabilities();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const now = new Date();
   const [wh, wm] = (settings?.work_start || "08:00").split(":").map(Number);
@@ -67,6 +74,8 @@ export default function Today() {
             <span className="mono">Usually under one minute</span>
           </div>
         </section>
+        <AbsenceDesk capabilities={capabilities} onChanged={loadCapabilities} />
+        <ReportAccessCard access={capabilities?.access} />
       </Shell>
     );
   }
@@ -196,9 +205,54 @@ export default function Today() {
           )}
           </section>
         </div>
+
+        <AbsenceDesk capabilities={capabilities} onChanged={loadCapabilities} />
+        <ReportAccessCard access={capabilities?.access} />
       </section>
     </Shell>
   );
+}
+
+function ReportAccessCard({ access }) {
+  return <section className={`today-report-access${access?.allowed ? " is-open" : " is-locked"}`} aria-labelledby="today-report-access-title"><div className="mono today-report-access-index">REPORT FUNCTION · A-04</div><div><span className="eyebrow">Department intelligence</span><h2 id="today-report-access-title" className="display">{access?.allowed ? "Your report desk is open." : "Report generation is visible, but locked."}</h2><p>{access?.allowed ? `Your ${access.kind === "board" ? "Board-wide" : "department"} authority lets you generate evidence reports, charts and AI management briefs.` : "A director, HOD or administrator must approve an appointment before department attendance can be opened."}</p></div><div className="today-report-access-actions"><Link to="/reports" className="btn btn-ghost">{access?.allowed ? "Open reports" : "Request access"}</Link><button type="button" className="btn btn-primary" disabled={!access?.allowed} onClick={() => window.location.assign("/reports")}>Generate report</button></div></section>;
+}
+
+function AbsenceDesk({ capabilities, onChanged }) {
+  const access = capabilities?.access;
+  const requests = capabilities?.absenceRequests || [];
+  const [open, setOpen] = useState(false);
+  const [from, setFrom] = useState(new Date(Date.now() + 86400000).toISOString().slice(0, 10));
+  const [to, setTo] = useState(new Date(Date.now() + 86400000).toISOString().slice(0, 10));
+  const [category, setCategory] = useState("official_assignment");
+  const [reason, setReason] = useState("");
+  const [selectedId, setSelectedId] = useState(null);
+  const [decisionNote, setDecisionNote] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState(null);
+  const pending = requests.filter((item) => item.status === "pending");
+  const latest = requests[0];
+  const selected = requests.find((item) => item.id === selectedId);
+
+  if (!capabilities) return null;
+  async function submit(event) {
+    event.preventDefault(); setBusy(true); setMessage(null);
+    try { const result = await requestAbsence({ from, to, category, reason }); setMessage({ tone: "clear", text: result.message }); setReason(""); await onChanged(); }
+    catch (requestError) { setMessage({ tone: "deny", text: requestError.message }); }
+    finally { setBusy(false); }
+  }
+  async function decide(decision) {
+    setBusy(true); setMessage(null);
+    try { const result = await decideAbsence({ absenceId: selected.id, decision, decisionNote }); setMessage({ tone: "clear", text: result.message }); setSelectedId(null); setDecisionNote(""); await onChanged(); }
+    catch (requestError) { setMessage({ tone: "deny", text: requestError.message }); }
+    finally { setBusy(false); }
+  }
+
+  return <section className={`today-absence-desk${open ? " is-open" : ""}`} aria-labelledby="today-absence-title">
+    <button type="button" className="today-absence-toggle" onClick={() => setOpen((value) => !value)} aria-expanded={open}>
+      <span className="mono">PERMISSION TO BE ABSENT · A-03</span><div><h2 id="today-absence-title" className="display">{access?.canApprove ? `${pending.length} requests need a decision.` : latest?.status === "pending" ? "Your request is awaiting a decision." : "Notify your department before you are away."}</h2><p>{access?.canApprove ? "Approve only requests within your authority. A decision writes the excused weekdays into the attendance register." : "Send the dates and reason to your director, HOD and administrators. Their decision will appear in Notifications."}</p></div><strong className="mono">{open ? "CLOSE" : access?.canApprove ? "REVIEW" : "OPEN FORM"}</strong>
+    </button>
+    {open ? <div className="today-absence-body">{message ? <Notice tone={message.tone}>{message.text}</Notice> : null}{access?.canApprove ? <div className="absence-review-grid"><div><span className="eyebrow">Pending department requests</span>{pending.length ? pending.map((item) => { const person = Array.isArray(item.profiles) ? item.profiles[0] : item.profiles; return <button type="button" key={item.id} className={selectedId === item.id ? "is-selected" : ""} onClick={() => { setSelectedId(item.id); setDecisionNote(""); }}><span><strong>{person?.full_name}</strong><small className="mono">{person?.staff_id || "NO STAFF NUMBER"}</small></span><b className="mono">{item.from_date} / {item.to_date}</b><p>{item.reason}</p></button>; }) : <p className="absence-empty">No absence requests are waiting.</p>}</div>{selected ? <form onSubmit={(event) => event.preventDefault()}><span className="mono">DECISION RECORD</span><strong>{(Array.isArray(selected.profiles) ? selected.profiles[0] : selected.profiles)?.full_name}</strong><p>{selected.from_date} to {selected.to_date} · {selected.reason_category.replace(/_/g, " ")}</p><label className="label" htmlFor="absence-decision-note">Reason for the decision</label><textarea id="absence-decision-note" className="field" rows="4" minLength="6" required value={decisionNote} onChange={(event) => setDecisionNote(event.target.value)} /><div><button type="button" className="btn btn-primary" onClick={() => decide("approved")} disabled={busy || decisionNote.trim().length < 6}>Approve absence</button><button type="button" className="btn btn-ghost" onClick={() => decide("refused")} disabled={busy || decisionNote.trim().length < 6}>Refuse request</button></div></form> : <aside><strong className="display">Select a request to decide it.</strong><p>Attendance with an actual sign-in is never overwritten by absence approval.</p></aside>}</div> : <div className="absence-request-grid"><div><span className="eyebrow">Your recent request</span>{latest ? <div className="absence-latest"><Pill tone={latest.status === "approved" ? "clear" : latest.status === "refused" ? "deny" : "hold"}>{latest.status}</Pill><strong className="mono">{latest.from_date} / {latest.to_date}</strong><p>{latest.decision_note || latest.reason}</p></div> : <p className="absence-empty">You have not submitted an absence request.</p>}</div><form onSubmit={submit}><div><label className="label" htmlFor="absence-from">From</label><input id="absence-from" type="date" className="field mono" value={from} max={to} onChange={(event) => setFrom(event.target.value)} /></div><div><label className="label" htmlFor="absence-to">To</label><input id="absence-to" type="date" className="field mono" min={from} value={to} onChange={(event) => setTo(event.target.value)} /></div><label><span className="label">Reason category</span><select className="field" value={category} onChange={(event) => setCategory(event.target.value)}><option value="official_assignment">Official assignment</option><option value="medical">Medical</option><option value="family">Family</option><option value="other">Other</option></select></label><label className="is-wide"><span className="label">Explain the request</span><textarea className="field" rows="4" minLength="12" required value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Give enough information for your director or HOD to make a decision" /></label><button className="btn btn-primary is-wide" disabled={busy || reason.trim().length < 12}>{busy ? "Sending request" : "Send absence request"}</button></form></div>}</div> : null}
+  </section>;
 }
 
 function Row({ k, v }) {
