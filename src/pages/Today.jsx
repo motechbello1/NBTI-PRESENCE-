@@ -1,7 +1,7 @@
 import { useEffect, useState, lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { Shell, Notice, Pill, StatusPill, Spinner } from "../components/UI";
+import { Shell, Notice, Pill, StatusPill, Spinner, AuthorityBadge } from "../components/UI";
 const VerifyFlow = lazy(() => import("../components/VerifyFlow"));
 import { getTodayRecord, signIn, signOut } from "../lib/db";
 
@@ -84,6 +84,7 @@ export default function Today() {
             <h1 className="display">{pageTitle}</h1>
           </div>
           <div className="today-head-actions">
+            <AuthorityBadge profile={profile} />
             <span className={`today-state ${record?.sign_in_at ? "is-clear" : "is-hold"}`}><i aria-hidden="true" />{pageState}</span>
             {isAdmin ? <Link to="/admin" className="btn btn-ghost">Administration</Link> : null}
           </div>

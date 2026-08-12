@@ -10,8 +10,10 @@ NBTI Presence is treated as a verification instrument and an official register, 
 - Bureau Green `#176B4A`: primary actions and a cleared verification state. It begins with Nigerian green but is darker and less literal than the flag.
 - Review Amber `#A05E12`: a held state or a record needing attention.
 - Refusal Red `#B33A32`: refusals, destructive actions and incident emphasis only.
+- Authority Blue `#1E5AA8`: a formally assigned HOD or Director check only.
+- Director-General Gold `#7A5200`: the DG check only; darkened to retain AA contrast on Ledger White.
 
-Muted surfaces and secondary text are mixed from Archive Ink, Ledger White and Filing Rule. No additional accent colours or gradients are used.
+Muted surfaces and secondary text are mixed from Archive Ink, Ledger White and Filing Rule. Authority Blue and Director-General Gold are identity exceptions, never general interface accents. No gradients are used.
 
 ## Typography
 

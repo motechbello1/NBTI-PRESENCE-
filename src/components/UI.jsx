@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { authorityBadgeFor, isSuperAdmin } from "../lib/authority";
 
 /* ── SHELL ────────────────────────────────────────────── */
 
@@ -24,6 +25,7 @@ export function Shell({ children }) {
   const nav = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const links = isAdmin ? ADMIN_LINKS : STAFF_LINKS;
+  const badge = isSuperAdmin(profile) ? { kind: "super", label: "Developer super admin" } : authorityBadgeFor(profile);
 
   const navigation = (mobile = false) => (
     <nav className={mobile ? "app-mobile-nav" : "app-nav"} aria-label={isAdmin ? "Administration" : "Staff account"}>
@@ -53,7 +55,7 @@ export function Shell({ children }) {
         {navigation()}
 
         <div className="app-identity">
-          <div className="app-identity-name">{profile?.full_name}</div>
+          <div className="app-identity-name">{profile?.full_name}<AuthorityBadge badge={badge} compact /></div>
           <div className="mono app-identity-code">{isAdmin ? "Administrator" : profile?.staff_id || "Staff"}</div>
           <button onClick={signOutOfApp} className="app-sign-out">Sign out</button>
         </div>
@@ -83,7 +85,7 @@ export function Shell({ children }) {
             </div>
             {navigation(true)}
             <div className="app-drawer-identity">
-              <span>{profile?.full_name}</span>
+              <span>{profile?.full_name}<AuthorityBadge badge={badge} compact /></span>
               <span className="mono">{profile?.staff_id || (isAdmin ? "Administrator" : "Staff")}</span>
               <button onClick={signOutOfApp}>Sign out</button>
             </div>
@@ -122,6 +124,20 @@ export function Wordmark({ compact = false }) {
         {!compact && <div className="brand-agency">National Board for Technology Incubation</div>}
       </div>
     </div>
+  );
+}
+
+export function AuthorityBadge({ profile, badge: suppliedBadge, compact = false }) {
+  const badge = suppliedBadge || authorityBadgeFor(profile);
+  if (!badge) return null;
+  return (
+    <span className={`authority-badge is-${badge.kind}${compact ? " is-compact" : ""}`} title={badge.label} aria-label={badge.label}>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path className="authority-badge-shape" d="M12 1.7l2.1 2 2.8-.5.9 2.7 2.7.9-.5 2.8 2 2.1-2 2.1.5 2.8-2.7.9-.9 2.7-2.8-.5-2.1 2-2.1-2-2.8.5-.9-2.7-2.7-.9.5-2.8-2-2.1 2-2.1-.5-2.8 2.7-.9.9-2.7 2.8.5z" />
+        <path className="authority-badge-check" d="M7.4 12.1l3 3.1 6.2-6.4" />
+      </svg>
+      {!compact ? <span>{badge.label}</span> : null}
+    </span>
   );
 }
 
