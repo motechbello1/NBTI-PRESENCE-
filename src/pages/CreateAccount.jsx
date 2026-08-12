@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { listDepartments } from "../lib/db";
-import { Seal, Notice } from "../components/UI";
+import { SecurityRail, Wordmark } from "../components/UI";
 
 export default function CreateAccount() {
   const nav = useNavigate();
@@ -47,80 +47,134 @@ export default function CreateAccount() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6">
-      <div className="w-full max-w-lg">
-        <div className="flex items-center gap-3 mb-8">
-          <Seal size={26} />
-          <span className="display text-[17px]">NBTI <span className="text-beam">PRESENCE</span></span>
+    <main className="account-shell auth-stage">
+      <aside className="account-brief" aria-labelledby="account-sequence-title">
+        <Wordmark />
+
+        <div className="account-brief-copy">
+          <div className="eyebrow">Staff onboarding register</div>
+          <h1 id="account-sequence-title" className="display">One record. Three steps.</h1>
+          <p>Your official details establish the account. Face enrolment happens only after you sign in.</p>
         </div>
 
-        <div className="eyebrow mb-2">New staff record</div>
-        <h2 className="display text-[30px] mb-2">Create your account</h2>
-        <p className="text-[14px] text-muted mb-7 leading-relaxed">
-          Use your official details. Your face is enrolled separately, from your
-          profile, once you are signed in.
-        </p>
+        <ol className="account-sequence">
+          <li data-state="current">
+            <span className="mono">01</span>
+            <div><strong>Account details</strong><small>Enter your official staff information</small></div>
+          </li>
+          <li>
+            <span className="mono">02</span>
+            <div><strong>Face enrolment</strong><small>Capture four guided positions</small></div>
+          </li>
+          <li>
+            <span className="mono">03</span>
+            <div><strong>Attendance ready</strong><small>Sign in only from the approved site</small></div>
+          </li>
+        </ol>
 
-        {sent ? (
-          <Notice tone="clear" title="Account created">
-            Check your email if confirmation is required, then sign in and enrol your face.
-          </Notice>
-        ) : (
-          <form onSubmit={submit} className="space-y-4">
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div>
-                <label className="label">Full name</label>
-                <input className="field" value={form.full_name} onChange={set("full_name")} required />
+        <div className="account-brief-note mono">FORM SERIES P · PERSONNEL RECORD</div>
+      </aside>
+
+      <section className="account-work" aria-labelledby="create-account-title">
+        <SecurityRail className="account-security-rail" />
+        <div className="account-mobile-brand"><Wordmark compact /></div>
+
+        <div className="account-form-wrap">
+          <div className="account-form-head">
+            <div className="mono account-form-reference">FORM P-02 · STAFF REGISTRATION</div>
+            <div className="eyebrow">New staff account</div>
+            <h2 id="create-account-title" className="display">Create your staff record</h2>
+            <p>Use the same details held by Human Resources. ICT must correct official fields after registration.</p>
+          </div>
+
+          {sent ? (
+            <div className="account-complete" role="status" aria-live="polite">
+              <div className="account-complete-mark" aria-hidden="true">
+                <svg width="32" height="32" viewBox="0 0 32 32">
+                  <path d="M8 16.5l5.2 5.2L24.5 10" fill="none" stroke="currentColor" strokeWidth="2" />
+                </svg>
               </div>
-              <div>
-                <label className="label">Staff number</label>
-                <input className="field" value={form.staff_id} onChange={set("staff_id")}
-                       placeholder="NBTI/00000" required />
-              </div>
+              <div className="eyebrow">Record created</div>
+              <h3 className="display">Your account is ready.</h3>
+              <p>Check your work email if confirmation is required. Then sign in and complete face enrolment.</p>
+              <Link to="/sign-in" className="btn btn-primary">Continue to sign in</Link>
             </div>
+          ) : (
+            <form onSubmit={submit} className="account-form">
+              <fieldset className="account-fieldset">
+                <legend><span className="mono">A</span> Official details</legend>
+                <div className="account-field-grid">
+                  <div>
+                    <label className="label" htmlFor="full-name">Full name</label>
+                    <input id="full-name" className="field" autoComplete="name" value={form.full_name} onChange={set("full_name")} required />
+                  </div>
+                  <div>
+                    <label className="label" htmlFor="staff-id">Staff number</label>
+                    <input id="staff-id" className="field mono" value={form.staff_id} onChange={set("staff_id")}
+                           placeholder="NBTI/00000" required />
+                  </div>
+                  <div className="account-field-wide">
+                    <label className="label" htmlFor="department">Department</label>
+                    <select id="department" className="field" value={form.department_id} onChange={set("department_id")} required>
+                      <option value="">Select your department</option>
+                      {departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                    </select>
+                  </div>
+                </div>
+              </fieldset>
 
-            <div>
-              <label className="label">Department</label>
-              <select className="field" value={form.department_id} onChange={set("department_id")} required>
-                <option value="">Select your department</option>
-                {departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-              </select>
-            </div>
+              <fieldset className="account-fieldset">
+                <legend><span className="mono">B</span> Contact details</legend>
+                <div className="account-field-grid">
+                  <div>
+                    <label className="label" htmlFor="work-email">Work email</label>
+                    <input id="work-email" className="field" type="email" inputMode="email" autoComplete="email"
+                           value={form.email} onChange={set("email")} required />
+                  </div>
+                  <div>
+                    <label className="label" htmlFor="phone">Phone</label>
+                    <input id="phone" className="field" type="tel" inputMode="tel" autoComplete="tel"
+                           value={form.phone} onChange={set("phone")} placeholder="0800 000 0000" />
+                  </div>
+                </div>
+              </fieldset>
 
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div>
-                <label className="label">Work email</label>
-                <input className="field" type="email" value={form.email} onChange={set("email")} required />
+              <fieldset className="account-fieldset">
+                <legend><span className="mono">C</span> Account security</legend>
+                <div className="account-field-grid">
+                  <div>
+                    <label className="label" htmlFor="new-password">Password</label>
+                    <input id="new-password" className="field" type="password" autoComplete="new-password"
+                           aria-describedby="password-help" value={form.password} onChange={set("password")} required />
+                    <small id="password-help" className="account-field-help">At least 8 characters.</small>
+                  </div>
+                  <div>
+                    <label className="label" htmlFor="confirm-password">Repeat password</label>
+                    <input id="confirm-password" className="field" type="password" autoComplete="new-password"
+                           value={form.confirm} onChange={set("confirm")} required />
+                  </div>
+                </div>
+              </fieldset>
+
+              <div className="account-error" role="alert" aria-live="polite">
+                {error || <span aria-hidden="true">&nbsp;</span>}
               </div>
-              <div>
-                <label className="label">Phone</label>
-                <input className="field" value={form.phone} onChange={set("phone")} placeholder="0800 000 0000" />
+
+              <div className="account-actions">
+                <button type="submit" className="btn btn-primary account-submit" disabled={busy}>
+                  <span>{busy ? "Creating staff record" : "Create account and continue"}</span>
+                  <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+                    <path d="M3 9h11M10 5l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                  </svg>
+                </button>
+                <p>Already registered? <Link to="/sign-in">Return to sign in</Link></p>
               </div>
-            </div>
+            </form>
+          )}
+        </div>
 
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div>
-                <label className="label">Password</label>
-                <input className="field" type="password" value={form.password} onChange={set("password")} required />
-              </div>
-              <div>
-                <label className="label">Repeat password</label>
-                <input className="field" type="password" value={form.confirm} onChange={set("confirm")} required />
-              </div>
-            </div>
-
-            {error && <div className="text-[13px] text-deny">{error}</div>}
-
-            <button className="btn btn-primary w-full" disabled={busy}>
-              {busy ? "Creating" : "Create account"}
-            </button>
-
-            <p className="text-[13px] text-muted">
-              Already registered? <Link to="/sign-in" className="text-beam hover:underline">Sign in</Link>
-            </p>
-          </form>
-        )}
-      </div>
-    </div>
+        <div className="auth-classification mono">NBTI INTERNAL SERVICE</div>
+      </section>
+    </main>
   );
 }

@@ -611,3 +611,221 @@ body {
   .auth-register li:hover { transform: none; }
   .splash-meter span { transform: scaleX(1); }
 }
+
+/* ─────────────────────────────────────────────
+   STAFF ACCOUNT REGISTER
+   ───────────────────────────────────────────── */
+.account-shell {
+  min-height: 100svh;
+  display: grid;
+  grid-template-columns: minmax(310px, 0.72fr) minmax(0, 1.28fr);
+  background: var(--ledger);
+}
+
+.account-brief {
+  min-height: 100svh;
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(30px, 4.2vw, 62px);
+  border-right: 1px solid var(--rule);
+  background: color-mix(in srgb, var(--rule) 22%, var(--ledger));
+}
+
+.account-brief-copy {
+  max-width: 380px;
+  margin-top: clamp(84px, 14vh, 150px);
+}
+
+.account-brief-copy h1 {
+  margin: 14px 0 18px;
+  font-size: clamp(40px, 4.2vw, 62px);
+  font-weight: 570;
+  line-height: 1;
+}
+
+.account-brief-copy p {
+  max-width: 345px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.account-sequence {
+  margin: 46px 0 0;
+  padding: 0;
+  border-top: 1px solid var(--archive);
+  list-style: none;
+}
+
+.account-sequence li {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 14px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--rule);
+  color: var(--muted);
+}
+
+.account-sequence li > span { padding-top: 3px; font-size: 10px; }
+.account-sequence strong { display: block; color: inherit; font-family: "Literata Variable", Georgia, serif; font-size: 15px; font-weight: 580; }
+.account-sequence small { display: block; margin-top: 4px; color: inherit; font-size: 11px; line-height: 1.45; }
+.account-sequence li[data-state="current"] { color: var(--archive); }
+.account-sequence li[data-state="current"] > span { color: var(--bureau); }
+.account-brief-note { margin-top: auto; padding-top: 42px; color: var(--muted); font-size: 8px; letter-spacing: 0.15em; }
+
+.account-work {
+  min-height: 100svh;
+  position: relative;
+  padding: clamp(42px, 5vw, 76px) clamp(38px, 7vw, 106px) 60px;
+  overflow: hidden;
+}
+
+.account-security-rail {
+  position: absolute;
+  inset: 0 20px 0 auto;
+  width: 24px;
+  height: 100%;
+  opacity: 0.45;
+}
+
+.account-mobile-brand { display: none; }
+.account-form-wrap { width: min(100%, 760px); margin-inline: auto; }
+
+.account-form-head {
+  position: relative;
+  padding-bottom: 30px;
+  border-bottom: 1px solid var(--archive);
+}
+
+.account-form-reference {
+  position: absolute;
+  right: 0;
+  top: 2px;
+  color: var(--bureau);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+}
+
+.account-form-head h2 {
+  margin: 12px 0 10px;
+  font-size: clamp(36px, 4.2vw, 58px);
+  font-weight: 580;
+  line-height: 1;
+}
+
+.account-form-head p { max-width: 560px; margin: 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
+.account-form { display: grid; }
+
+.account-fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 28px 0 30px;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.account-fieldset legend {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 20px;
+  padding: 0;
+  color: var(--archive);
+  font-family: "Literata Variable", Georgia, serif;
+  font-size: 17px;
+  font-weight: 580;
+}
+
+.account-fieldset legend span {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--bureau);
+  color: var(--bureau);
+  font-size: 9px;
+}
+
+.account-field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.account-field-wide { grid-column: 1 / -1; }
+.account-field-help { display: block; margin-top: 7px; color: var(--muted); font-size: 11px; }
+.account-error { min-height: 43px; padding-top: 12px; color: var(--refusal); font-size: 12px; line-height: 1.45; }
+
+.account-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding-top: 8px;
+}
+
+.account-submit {
+  min-width: min(100%, 310px);
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+}
+
+.account-submit svg { transition: transform 160ms ease; }
+.account-submit:hover:not(:disabled) svg { transform: translateX(3px); }
+.account-actions p { margin: 0; color: var(--muted); font-size: 12px; }
+.account-actions a { color: var(--bureau); font-weight: 610; text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 3px; }
+.account-actions a:hover { text-decoration-color: currentColor; }
+
+.account-complete {
+  max-width: 520px;
+  margin-top: 62px;
+  padding: 36px;
+  border: 1px solid var(--rule);
+  border-top: 3px solid var(--bureau);
+  animation: auth-enter 340ms var(--ease-instrument) both;
+}
+
+.account-complete-mark {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 34px;
+  border: 1px solid var(--bureau);
+  color: var(--bureau);
+}
+
+.account-complete h3 { margin: 10px 0 12px; font-size: 37px; font-weight: 580; }
+.account-complete p { margin: 0 0 26px; color: var(--muted); font-size: 14px; line-height: 1.6; }
+
+.account-brief-copy,
+.account-sequence,
+.account-form-head,
+.account-form { animation: auth-enter 340ms var(--ease-instrument) both; }
+.account-brief-copy { animation-delay: 50ms; }
+.account-sequence { animation-delay: 120ms; }
+.account-form-head { animation-delay: 70ms; }
+.account-form { animation-delay: 140ms; }
+
+@media (max-width: 960px) {
+  .account-shell { grid-template-columns: minmax(0, 1fr); }
+  .account-brief { display: none; }
+  .account-work { padding: 108px 42px 58px; }
+  .account-mobile-brand { display: block; position: absolute; top: 28px; left: 42px; }
+  .account-security-rail { right: 15px; width: 20px; }
+}
+
+@media (max-width: 560px) {
+  .account-work { padding: 102px 18px 48px; }
+  .account-mobile-brand { left: 18px; }
+  .account-security-rail { display: none; }
+  .account-form-head { padding-bottom: 26px; }
+  .account-form-reference { position: static; margin-bottom: 28px; }
+  .account-form-head h2 { font-size: 35px; }
+  .account-field-grid { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .account-field-wide { grid-column: auto; }
+  .account-actions { align-items: stretch; flex-direction: column; gap: 18px; }
+  .account-submit { width: 100%; min-width: 0; }
+  .account-complete { margin-top: 34px; padding: 28px 24px; }
+}
