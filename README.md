@@ -69,6 +69,14 @@ update profiles set role = 'admin' where email = 'your.email@nbti.gov.ng';
 
 Sign out and back in. The Administration menu appears.
 
+Apply the committed migrations before deploying the application. They add the
+department-scoped report appointment, absence approval and notification
+records without changing the existing attendance policies or reporting view:
+
+```bash
+supabase db push
+```
+
 ### 2a. Presence Intelligence
 
 The report writer and assistant run in the supplied `presence-intelligence`
@@ -88,12 +96,19 @@ aggregates to it. The default compact OpenAI model is chosen for report quality,
 not because the platform depends on OpenAI. Switching providers is one secret
 change.
 
-The function creates its Supabase client from the caller's bearer token. Its
-queries therefore retain the existing row-level security and the
-`security_invoker` reporting view. It sends aggregate attendance evidence to
-the model, not raw face descriptors, incident frames or exact coordinates.
-Generated findings are advisory and remain visually separate from the source
-charts and register.
+The function first validates the caller's bearer token and profile. Staff
+without an appointment receive only their own evidence. Directors and HODs
+receive their assigned department, appointed staff receive the same department
+until the appointment expires, and the Director-General or administrator can
+use Board scope. The privileged database key remains inside the Edge Function
+and is used only after this explicit authority check. The browser cannot use it
+to query department records directly.
+
+The model receives aggregate attendance evidence, not raw face descriptors,
+incident frames or exact coordinates. Generated findings are advisory and
+remain visually separate from the source charts and register. Report approvals,
+refusals and revocations are written to the audit log. Absence approvals never
+overwrite a day with an actual sign-in.
 
 ### 3. Set the perimeter before anyone uses it
 
@@ -117,7 +132,6 @@ Push to GitHub, then import the repository at vercel.com.
 
 Add both environment variables under **Settings → Environment Variables**:
 
-```
 VITE_SUPABASE_URL
 VITE_SUPABASE_ANON_KEY
 ```

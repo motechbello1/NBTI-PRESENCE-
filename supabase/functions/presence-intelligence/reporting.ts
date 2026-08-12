@@ -52,6 +52,15 @@ function departmentCode(staff: StaffRow) {
   return staff.departments?.code || staff.departments?.name || "Unassigned";
 }
 
+function lagosHour(value: string) {
+  const hour = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Africa/Lagos",
+    hour: "2-digit",
+    hourCycle: "h23",
+  }).format(new Date(value));
+  return `${hour}:00`;
+}
+
 export function buildReportEvidence({
   rows,
   staff,
@@ -110,6 +119,16 @@ export function buildReportEvidence({
     .sort((a, b) => a.date.localeCompare(b.date))
     .map((day) => ({ ...day, hours: round(day.hours) }));
 
+  const arrivalMap = new Map<string, number>();
+  rows.forEach((row) => {
+    if (!row.sign_in_at) return;
+    const hour = lagosHour(row.sign_in_at);
+    arrivalMap.set(hour, (arrivalMap.get(hour) || 0) + 1);
+  });
+  const arrivals = [...arrivalMap.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([hour, count]) => ({ hour, count }));
+
   const departmentMap = new Map<string, {
     department: string;
     code: string;
@@ -161,6 +180,37 @@ export function buildReportEvidence({
     }))
     .sort((a, b) => b.attendanceRatePercent - a.attendanceRatePercent);
 
+  const rowsByPerson = new Map<string, ReportRow[]>();
+  rows.forEach((row) => {
+    const personRows = rowsByPerson.get(row.user_id) || [];
+    personRows.push(row);
+    rowsByPerson.set(row.user_id, personRows);
+  });
+  const people = staff.map((selected) => {
+    const personRows = rowsByPerson.get(selected.id) || [];
+    const personAttended = personRows.filter((row) => Boolean(row.sign_in_at)).length;
+    const personLate = personRows.filter((row) => row.status === "late").length;
+    const personExcused = personRows.filter((row) => row.status === "excused").length;
+    const personHours = personRows.reduce((sum, row) => sum + Number(row.hours_worked || 0), 0);
+    return {
+      id: selected.id,
+      name: selected.full_name,
+      staffNumber: selected.staff_id || null,
+      department: departmentName(selected),
+      departmentCode: departmentCode(selected),
+      attendedDays: personAttended,
+      expectedDays: expectedWorkingDays,
+      attendanceRatePercent: expectedWorkingDays
+        ? Math.round((personAttended / expectedWorkingDays) * 100)
+        : 0,
+      lateDays: personLate,
+      excusedDays: personExcused,
+      earlyDepartures: personRows.filter((row) => row.early_departure).length,
+      incompleteSignOuts: personRows.filter((row) => row.sign_in_at && !row.sign_out_at).length,
+      totalHours: round(personHours),
+    };
+  }).sort((a, b) => b.attendanceRatePercent - a.attendanceRatePercent || a.name.localeCompare(b.name));
+
   const person = scope === "individual" || scope === "self"
     ? (() => {
         const selected = staff[0];
@@ -178,7 +228,9 @@ export function buildReportEvidence({
     scope: { kind: scope, label: scopeLabel },
     summary,
     daily,
+    arrivals,
     departments,
+    people,
     person,
     methodology: {
       expectedDays: "Monday to Friday, inclusive",

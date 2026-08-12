@@ -58,6 +58,41 @@ export async function listDepartments() {
   return data;
 }
 
+export async function createDepartment(input) {
+  const { data, error } = await supabase.from("departments").insert(input).select().single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateDepartment(departmentId, patch) {
+  const { data, error } = await supabase.from("departments")
+    .update({ ...patch, updated_at: new Date().toISOString() })
+    .eq("id", departmentId).select().single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteDepartment(departmentId) {
+  const { error } = await supabase.from("departments").delete().eq("id", departmentId);
+  if (error) throw error;
+}
+
+/* ── NOTIFICATIONS ───────────────────────────────────── */
+
+export async function listMyNotifications(userId, limit = 20) {
+  const { data, error } = await supabase.from("notifications")
+    .select("id, title, body, category, action_url, read_at, created_at")
+    .eq("recipient_id", userId).order("created_at", { ascending: false }).limit(limit);
+  if (error) throw error;
+  return data;
+}
+
+export async function markNotificationRead(notificationId) {
+  const { error } = await supabase.from("notifications")
+    .update({ read_at: new Date().toISOString() }).eq("id", notificationId);
+  if (error) throw error;
+}
+
 /* ── FACE ENROLMENT ───────────────────────────────────── */
 
 export async function saveEnrolment(userId, rows) {

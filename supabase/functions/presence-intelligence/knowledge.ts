@@ -64,7 +64,13 @@ export const KNOWLEDGE: KnowledgeEntry[] = [
     id: "presence-permissions",
     title: "Permissions and privacy",
     source: "platform://about/permissions",
-    text: "A staff account can read its own profile, enrolment and attendance. An administrator can read the wider register as allowed by database policy. The reporting view runs with the caller's permissions. The intelligence service uses the caller's signed session and the same row-level security, and it receives only aggregate attendance evidence. It cannot change attendance, edit settings, grant a role, approve absence, expose another person's biometric data or bypass any verification gate.",
+    text: "A staff account can read its own profile, enrolment and attendance. Report generation is visible to every staff member but remains locked until authority exists. A Director or Head of Department can generate reports for the department assigned to their profile. A staff member can request a time-limited reporting appointment; a Director, HOD, Director-General or administrator must approve it before department evidence opens. The Director-General and full administrator can use Board scope. The intelligence service validates the caller's signed session and authority before it builds aggregate evidence. It cannot edit settings, grant a role, expose biometric data or bypass a verification gate.",
+  },
+  {
+    id: "presence-absence",
+    title: "Absence permission workflow",
+    source: "platform://about/absence-permission",
+    text: "A staff member can notify the department by submitting a dated absence request and work reason from the Today dashboard. A Director, Head of Department, Director-General or administrator reviews the request within their authority. Approval writes only the weekdays without an actual sign-in as excused attendance. It never overwrites a completed or active attendance record. The requester receives the decision through Notifications, and the decision is written to the audit log.",
   },
   {
     id: "presence-limitations",

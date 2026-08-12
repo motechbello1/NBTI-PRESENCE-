@@ -10,7 +10,7 @@ export class IntelligenceError extends Error {
   }
 }
 
-async function invokeIntelligence(body) {
+export async function invokeIntelligence(body) {
   const { data, error } = await supabase.functions.invoke("presence-intelligence", {
     body,
   });
@@ -40,6 +40,52 @@ export function generateAttendanceBrief({ from, to, scope, departmentId, userId 
     scope,
     departmentId: scope === "department" ? departmentId : undefined,
     userId: scope === "individual" ? userId : undefined,
+  });
+}
+
+export function getReportCapabilities() {
+  return invokeIntelligence({ mode: "capabilities" });
+}
+
+export function getReportEvidence({ from, to, scope, departmentId, userId }) {
+  return invokeIntelligence({
+    mode: "evidence",
+    from,
+    to,
+    scope,
+    departmentId: scope === "department" ? departmentId : undefined,
+    userId: scope === "individual" ? userId : undefined,
+  });
+}
+
+export function requestReportAccess(requestNote) {
+  return invokeIntelligence({ mode: "request_access", requestNote });
+}
+
+export function decideReportAccess({ authorityId, decision, decisionNote, expiresAt }) {
+  return invokeIntelligence({ mode: "decide_access", authorityId, decision, decisionNote, expiresAt });
+}
+
+export function revokeReportAccess(authorityId) {
+  return invokeIntelligence({ mode: "revoke_access", authorityId });
+}
+
+export function requestAbsence({ from, to, category, reason }) {
+  return invokeIntelligence({
+    mode: "request_absence",
+    absenceFrom: from,
+    absenceTo: to,
+    absenceCategory: category,
+    absenceReason: reason,
+  });
+}
+
+export function decideAbsence({ absenceId, decision, decisionNote }) {
+  return invokeIntelligence({
+    mode: "decide_absence",
+    absenceId,
+    absenceDecision: decision,
+    decisionNote,
   });
 }
 
