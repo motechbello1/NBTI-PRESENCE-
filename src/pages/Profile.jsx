@@ -1,6 +1,6 @@
 import { useState, lazy, Suspense } from "react";
 import { useAuth } from "../context/AuthContext";
-import { Shell, PageHead, Notice, Pill, Spinner } from "../components/UI";
+import { Shell, Notice, Pill, Spinner } from "../components/UI";
 const EnrolFlow = lazy(() => import("../components/EnrolFlow"));
 import { clearEnrolment, updateProfile } from "../lib/db";
 import { deviceLabel } from "../lib/device";
@@ -8,12 +8,13 @@ import { deviceLabel } from "../lib/device";
 export default function Profile() {
   const { session, profile, refresh } = useAuth();
   const [enrolling, setEnrolling] = useState(false);
+  const [confirmingRedo, setConfirmingRedo] = useState(false);
   const [form, setForm] = useState({ phone: profile?.phone || "", grade_level: profile?.grade_level || "" });
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  async function save(e) {
-    e.preventDefault();
+  async function save(event) {
+    event.preventDefault();
     setBusy(true);
     await updateProfile(session.user.id, form);
     await refresh();
@@ -23,101 +24,158 @@ export default function Profile() {
   }
 
   async function redo() {
-    if (!confirm("This clears your stored face and you will need to enrol again before your next sign in. Continue?")) return;
     await clearEnrolment(session.user.id);
     await refresh();
+    setConfirmingRedo(false);
     setEnrolling(true);
   }
 
+  const enrolled = Boolean(profile?.face_enrolled);
+
   return (
     <Shell>
-      <PageHead eyebrow="Your account" title="Profile" />
+      <section className="profile-page" aria-labelledby="profile-title">
+        <header className="profile-head">
+          <div>
+            <div className="eyebrow">Personnel record · staff copy</div>
+            <h1 id="profile-title" className="display">Identity and enrolment</h1>
+          </div>
+          <div className={`profile-record-state ${enrolled ? "is-clear" : "is-hold"}`}>
+            <i aria-hidden="true" />
+            <span className="mono">{enrolled ? "FACE RECORD ACTIVE" : "ENROLMENT REQUIRED"}</span>
+          </div>
+        </header>
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        <div className="space-y-5">
-          <div className="panel p-5">
-            <div className="flex items-start justify-between gap-4 mb-4">
-              <div>
-                <div className="eyebrow mb-2">Face enrolment</div>
-                <div className="display text-[19px]">
-                  {profile?.face_enrolled ? "Enrolled" : "Not enrolled"}
+        <div className="profile-layout">
+          <section className="profile-personnel" aria-labelledby="personnel-title">
+            <div className="profile-credential notched">
+              <div className="profile-credential-top mono"><span>PERSONNEL FILE</span><span>P-01</span></div>
+              <h2 id="personnel-title" className="display">{profile?.full_name}</h2>
+              <div className="profile-staff-id mono">{profile?.staff_id || "NO STAFF NUMBER"}</div>
+              <dl>
+                <RecordRow label="Department" value={profile?.departments?.name || "Unassigned"} />
+                <RecordRow label="Access" value="Staff register" />
+                <RecordRow label="Record owner" value={session.user.email || "Authenticated account"} />
+              </dl>
+            </div>
+
+            <form onSubmit={save} className="profile-form" aria-labelledby="details-title">
+              <div className="profile-section-head">
+                <div>
+                  <div className="eyebrow">Account details</div>
+                  <h2 id="details-title" className="display">Personnel information</h2>
                 </div>
+                <span className="mono">EDITABLE FIELDS MARKED</span>
               </div>
-              <Pill tone={profile?.face_enrolled ? "clear" : "hold"}>
-                {profile?.face_enrolled ? "Ready" : "Action needed"}
-              </Pill>
-            </div>
 
-            <p className="text-[14px] text-muted leading-relaxed mb-4">
-              Your face is stored as a set of numbers that describe its proportions.
-              It cannot be turned back into a photograph, and it is readable only by
-              your own account. No image of you is kept unless an attendance attempt
-              is refused, in which case that single frame is held as evidence.
-            </p>
+              <fieldset className="profile-fieldset">
+                <legend className="mono">CONTROLLED BY ICT</legend>
+                <div className="profile-field-grid">
+                  <div className="profile-field is-locked profile-field-wide">
+                    <label htmlFor="profile-full-name">Full name</label>
+                    <input id="profile-full-name" value={profile?.full_name || ""} disabled />
+                  </div>
+                  <div className="profile-field is-locked">
+                    <label htmlFor="profile-staff-number">Staff number</label>
+                    <input id="profile-staff-number" value={profile?.staff_id || "—"} disabled />
+                  </div>
+                  <div className="profile-field is-locked">
+                    <label htmlFor="profile-department">Department</label>
+                    <input id="profile-department" value={profile?.departments?.name || "—"} disabled />
+                  </div>
+                </div>
+                <p>Contact the ICT department to correct a controlled field.</p>
+              </fieldset>
 
-            {enrolling ? (
-              <Suspense fallback={<Spinner label="Loading the verification engine" />}>
-                <EnrolFlow onDone={() => setEnrolling(false)} onCancel={() => setEnrolling(false)} />
-              </Suspense>
-            ) : (
-              <div className="flex gap-3">
-                {!profile?.face_enrolled
-                  ? <button className="btn btn-primary" onClick={() => setEnrolling(true)}>Enrol my face</button>
-                  : <button className="btn btn-ghost" onClick={redo}>Enrol again</button>}
+              <fieldset className="profile-fieldset is-editable">
+                <legend className="mono">YOU MAY UPDATE</legend>
+                <div className="profile-field-grid">
+                  <div className="profile-field">
+                    <label htmlFor="profile-phone">Phone number</label>
+                    <input id="profile-phone" inputMode="tel" autoComplete="tel" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} />
+                  </div>
+                  <div className="profile-field">
+                    <label htmlFor="profile-grade">Grade level</label>
+                    <input id="profile-grade" value={form.grade_level} onChange={(event) => setForm({ ...form, grade_level: event.target.value })} placeholder="CONRAISS 09" />
+                  </div>
+                </div>
+              </fieldset>
+
+              <div className="profile-form-actions">
+                <button className="btn btn-primary" disabled={busy}>{busy ? "Saving changes" : "Save changes"}</button>
+                <span className="mono" role="status" aria-live="polite">{saved ? "CHANGES SAVED" : ""}</span>
               </div>
-            )}
-          </div>
+            </form>
+          </section>
 
-          <div className="panel p-5">
-            <div className="eyebrow mb-3">This device</div>
-            <div className="mono text-[13px]">{deviceLabel()}</div>
-            <p className="text-[13px] text-muted mt-3 leading-relaxed">
-              The system notices when one handset records attendance for more than
-              one person in a day and raises this with the ICT department.
-            </p>
-          </div>
+          <aside className="profile-verification" aria-labelledby="face-record-title">
+            <section className="profile-face-card">
+              <div className="profile-face-head">
+                <div>
+                  <div className="mono">BIOMETRIC CONTROL · B-04</div>
+                  <h2 id="face-record-title" className="display">Face record</h2>
+                </div>
+                <Pill tone={enrolled ? "clear" : "hold"}>{enrolled ? "Ready" : "Action needed"}</Pill>
+              </div>
+
+              {enrolling ? (
+                <Suspense fallback={<div className="profile-engine-loading"><Spinner label="Loading the enrolment instrument" /></div>}>
+                  <EnrolFlow onDone={() => setEnrolling(false)} onCancel={() => setEnrolling(false)} />
+                </Suspense>
+              ) : (
+                <>
+                  <div className="profile-face-seal" aria-hidden="true">
+                    <svg viewBox="0 0 180 180">
+                      <circle cx="90" cy="90" r="69" />
+                      <circle cx="90" cy="76" r="24" />
+                      <path d="M46 137c8-28 24-42 44-42s36 14 44 42" />
+                      <path d="M90 8v13M90 159v13M8 90h13M159 90h13" />
+                    </svg>
+                    <span className="mono">{enrolled ? "ACTIVE" : "EMPTY"}</span>
+                  </div>
+                  <p>
+                    The stored record is a set of face measurements, not a photograph.
+                    Routine attendance video is not retained. A single frame is kept only when an attempt is refused as evidence.
+                  </p>
+                  <ol className="profile-capture-list">
+                    {[
+                      ["01", "Centre", "Straight reading"],
+                      ["02", "Left", "Side reading"],
+                      ["03", "Right", "Side reading"],
+                      ["04", "Up", "Raised reading"],
+                    ].map(([number, pose, detail]) => <li key={pose}><span className="mono">{number}</span><strong>{pose}</strong><small>{detail}</small></li>)}
+                  </ol>
+
+                  {confirmingRedo ? (
+                    <div className="profile-confirm" role="alert">
+                      <strong>Replace the active face record?</strong>
+                      <p>Attendance will remain unavailable until all four positions are captured again.</p>
+                      <div><button className="btn btn-danger" onClick={redo}>Clear and enrol again</button><button className="btn btn-ghost" onClick={() => setConfirmingRedo(false)}>Keep current record</button></div>
+                    </div>
+                  ) : (
+                    <div className="profile-face-action">
+                      {!enrolled
+                        ? <button className="btn btn-primary" onClick={() => setEnrolling(true)}>Begin face enrolment</button>
+                        : <button className="btn btn-ghost" onClick={() => setConfirmingRedo(true)}>Replace face record</button>}
+                      <span className="mono">FOUR LIVE POSITIONS · UNDER ONE MINUTE</span>
+                    </div>
+                  )}
+                </>
+              )}
+            </section>
+
+            <section className="profile-device">
+              <div className="eyebrow">This attendance device</div>
+              <div className="profile-device-reading mono">{deviceLabel()}</div>
+              <p>One handset recording attendance for multiple staff on the same day is raised automatically with ICT.</p>
+            </section>
+          </aside>
         </div>
-
-        <form onSubmit={save} className="panel p-5 h-fit">
-          <div className="eyebrow mb-4">Your details</div>
-
-          <div className="space-y-4">
-            <div>
-              <label className="label">Full name</label>
-              <input className="field opacity-60" value={profile?.full_name || ""} disabled />
-              <p className="text-[12px] text-muted mt-1.5">Contact ICT to change your name or staff number.</p>
-            </div>
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div>
-                <label className="label">Staff number</label>
-                <input className="field opacity-60" value={profile?.staff_id || "—"} disabled />
-              </div>
-              <div>
-                <label className="label">Department</label>
-                <input className="field opacity-60" value={profile?.departments?.name || "—"} disabled />
-              </div>
-            </div>
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div>
-                <label className="label">Phone</label>
-                <input className="field" value={form.phone}
-                       onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-              </div>
-              <div>
-                <label className="label">Grade level</label>
-                <input className="field" value={form.grade_level}
-                       onChange={(e) => setForm({ ...form, grade_level: e.target.value })}
-                       placeholder="CONRAISS 09" />
-              </div>
-            </div>
-          </div>
-
-          <button className="btn btn-primary mt-6" disabled={busy}>
-            {busy ? "Saving" : "Save changes"}
-          </button>
-          {saved && <span className="mono text-[11px] text-beam ml-4 uppercase tracking-wider">Saved</span>}
-        </form>
-      </div>
+      </section>
     </Shell>
   );
+}
+
+function RecordRow({ label, value }) {
+  return <div><dt className="mono">{label}</dt><dd>{value}</dd></div>;
 }

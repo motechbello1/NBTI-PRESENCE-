@@ -23,6 +23,16 @@ const POSES = [
   { ...ACTIONS.up, capture: "up" },
 ];
 
+function EnrolCue({ direction }) {
+  const paths = {
+    left: "M18 5l-7 7 7 7M11 12h15",
+    right: "M14 5l7 7-7 7M21 12H6",
+    up: "M5 14l7-7 7 7M12 7v15",
+  };
+  if (!paths[direction]) return null;
+  return <div className={`enrol-cue is-${direction}`} aria-hidden="true"><svg viewBox="0 0 32 32"><path d={paths[direction]} /></svg></div>;
+}
+
 export default function EnrolFlow({ onDone, onCancel }) {
   const { session, refresh } = useAuth();
   const videoRef = useRef(null);
@@ -156,61 +166,65 @@ export default function EnrolFlow({ onDone, onCancel }) {
   const pose = POSES[Math.min(step, POSES.length - 1)];
 
   return (
-    <div className="space-y-5">
-      <div className="flex gap-1.5">
-        {POSES.map((p, i) => (
-          <div key={p.capture} className="flex-1">
-            <div className={`h-1 rounded-sm transition-colors ${i < step ? "bg-clear" : i === step ? "bg-hold" : "bg-line"}`} />
-            <div className="mono text-[10px] text-muted mt-1.5 uppercase tracking-wider">{p.capture}</div>
-          </div>
+    <div className="enrol-flow" data-phase={phase}>
+      <ol className="enrol-progress" aria-label={`Face enrolment position ${Math.min(step + 1, 4)} of 4`}>
+        {POSES.map((item, index) => (
+          <li key={item.capture} data-state={index < step ? "clear" : index === step ? "active" : "pending"}>
+            <span className="mono">{String(index + 1).padStart(2, "0")}</span>
+            <strong>{item.capture}</strong>
+            <i aria-hidden="true" />
+          </li>
         ))}
+      </ol>
+
+      <div className="enrol-instrument">
+        <div className="enrol-instrument-head">
+          <div><span className="mono">LIVE CAPTURE · POSITION {String(Math.min(step + 1, 4)).padStart(2, "0")}</span><strong>Face measurement</strong></div>
+          <span className="mono">{phase === "idle" ? "READY" : phase.toUpperCase()}</span>
+        </div>
+
+        <div className="enrol-camera">
+          <div className="scan-frame">
+            <video ref={videoRef} playsInline muted autoPlay aria-label="Live camera view for face enrolment" />
+            {phase === "running" ? <div className="sweep" /> : null}
+            {phase === "running" ? <EnrolCue direction={pose.cue} /> : null}
+            <div className="enrol-reticle" aria-hidden="true"><i /><i /><i /><i /></div>
+            <svg className="enrol-ring" viewBox="0 0 340 340" aria-hidden="true">
+              <circle cx="170" cy="170" r="158" />
+              <circle className="is-progress" cx="170" cy="170" r="158" pathLength="4" strokeDasharray={`${step} ${4 - step}`} />
+            </svg>
+            {phase === "idle" ? (
+              <div className="enrol-privacy">
+                <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M7 11h5l2-3h5l2 3h4v14H7z" /><circle cx="16" cy="18" r="4" /></svg>
+                <span>Camera opens only when you begin</span>
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="enrol-readout" aria-live="polite">
+          {phase === "running" ? <><strong className="display">{pose.prompt}</strong><span className="mono">{status}</span></> : null}
+          {phase === "preparing" ? <Spinner label={status} /> : null}
+          {phase === "saving" ? <Spinner label="Saving your face measurements" /> : null}
+          {phase === "done" ? <strong className="display is-clear">Face record complete</strong> : null}
+          {phase === "idle" ? <><strong className="display">Ready for four positions</strong><p>Remove sunglasses, face a window or lamp, and keep everyone else outside the frame.</p></> : null}
+          {phase === "error" ? <strong className="display is-denied">Capture stopped</strong> : null}
+        </div>
+
+        <div className="enrol-actions">
+          {(phase === "idle" || phase === "error") ? (
+            <>
+              <button type="button" className="btn btn-primary" onClick={begin}>{phase === "error" ? "Try enrolment again" : "Start live capture"}</button>
+              {onCancel ? <button type="button" className="btn btn-ghost" onClick={() => { stop(); onCancel(); }}>Cancel</button> : null}
+            </>
+          ) : null}
+          {(phase === "running" || phase === "preparing") ? (
+            <button type="button" className="btn btn-ghost" onClick={() => { abort.current = true; stop(); setPhase("idle"); setStep(0); }}>Stop capture</button>
+          ) : null}
+        </div>
       </div>
 
-      <div className="panel p-5 md:p-6">
-        <div className="scan-frame">
-          <video ref={videoRef} playsInline muted autoPlay />
-          {phase === "running" && <div className="sweep" />}
-          {phase === "running" && pose.cue === "left" && <div className="cue cue-left">◄</div>}
-          {phase === "running" && pose.cue === "right" && <div className="cue cue-right">►</div>}
-          {phase === "running" && pose.cue === "up" && <div className="cue cue-up">▲</div>}
-        </div>
-
-        <div className="mt-5 text-center min-h-[58px]">
-          {phase === "running" && (
-            <>
-              <div className="display text-[21px]">{pose.prompt}</div>
-              <div className="mono text-[11px] text-muted mt-1.5 uppercase tracking-wider">{status}</div>
-            </>
-          )}
-          {phase === "preparing" && <div className="flex justify-center"><Spinner label={status} /></div>}
-          {phase === "saving" && <div className="flex justify-center"><Spinner label="Saving your face" /></div>}
-          {phase === "done" && <div className="display text-[21px] text-beam">Face enrolled</div>}
-          {phase === "idle" && (
-            <div className="text-[14px] text-muted max-w-sm mx-auto leading-relaxed">
-              Four quick captures from four angles. Take off sunglasses, face a window
-              or a lamp, and this takes under a minute.
-            </div>
-          )}
-        </div>
-
-        <div className="mt-5 flex gap-3 justify-center">
-          {(phase === "idle" || phase === "error") && (
-            <>
-              <button className="btn btn-primary" onClick={begin}>
-                {phase === "error" ? "Try again" : "Start enrolment"}
-              </button>
-              {onCancel && <button className="btn btn-ghost" onClick={() => { stop(); onCancel(); }}>Cancel</button>}
-            </>
-          )}
-          {(phase === "running" || phase === "preparing") && (
-            <button className="btn btn-ghost" onClick={() => { abort.current = true; stop(); setPhase("idle"); setStep(0); }}>
-              Stop
-            </button>
-          )}
-        </div>
-      </div>
-
-      {error && <Notice tone="deny" title="Enrolment stopped">{error}</Notice>}
+      {error ? <Notice tone="deny" title="Enrolment stopped">{error}</Notice> : null}
     </div>
   );
 }
