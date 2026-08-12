@@ -1915,3 +1915,189 @@ body {
   .daily-register-filter-status i { animation: none; }
   .register-row-action:hover span { transform: none; }
 }
+
+/* ─────────────────────────────────────────────
+   ADMIN · PERSONNEL COMMAND
+   The directory is a ruled service list; one selected record opens
+   into a deliberate control surface below it.
+   ───────────────────────────────────────────── */
+.staff-command-page { width: min(100%, 1320px); margin-inline: auto; animation: staff-command-arrive 340ms var(--ease-instrument) both; }
+.staff-command-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(250px, 30%); min-height: 260px; border: 1px solid var(--archive); background: var(--ledger); }
+.staff-command-head > div { align-self: end; padding: clamp(28px, 5vw, 64px); }
+.staff-command-head .eyebrow { color: var(--refusal); }
+.staff-command-head h1 { max-width: 780px; margin: 15px 0 0; font-size: clamp(46px, 6vw, 76px); text-wrap: balance; }
+.staff-command-head p { max-width: 690px; margin: 18px 0 0; color: var(--muted); font-size: 14px; line-height: 1.65; }
+.staff-command-clearance { display: grid; align-content: end; gap: 14px; padding: clamp(26px, 4vw, 46px); color: var(--ledger); border-left: 1px solid var(--archive); background: var(--archive); }
+.staff-command-clearance > span { color: color-mix(in srgb, var(--bureau) 38%, var(--ledger)); font-size: 8px; letter-spacing: 0.14em; }
+.staff-command-clearance strong { font-family: "Literata Variable", Georgia, serif; font-size: clamp(24px, 3vw, 34px); font-weight: 570; line-height: 1.12; }
+.staff-command-clearance small { padding-top: 14px; color: var(--rule); border-top: 1px solid color-mix(in srgb, var(--rule) 28%, transparent); font-size: 8px; letter-spacing: 0.12em; }
+
+.staff-command-summary { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); margin: 10px 0 0; border: 1px solid var(--archive); }
+.staff-command-summary > div { min-width: 0; padding: 17px 18px 20px; border-right: 1px solid var(--archive); background: var(--ledger); }
+.staff-command-summary > div:last-child { border-right: 0; }
+.staff-command-summary > div > span { color: var(--muted); font-size: 7px; letter-spacing: 0.12em; }
+.staff-command-summary dt { margin-top: 12px; color: var(--muted); font-size: 8px; letter-spacing: 0.1em; text-transform: uppercase; }
+.staff-command-summary dd { margin: 8px 0 0; font-size: 30px; line-height: 1; }
+.staff-command-summary .is-clear dd { color: var(--bureau); }
+.staff-command-summary .is-hold dd { color: var(--review); }
+
+.staff-command-tools { display: grid; grid-template-columns: minmax(260px, 1.45fr) minmax(240px, 1fr) auto; align-items: end; gap: 14px; margin-top: 34px; padding: 20px; border: 1px solid var(--archive); background: color-mix(in srgb, var(--rule) 25%, var(--ledger)); }
+.staff-search-field > div { position: relative; }
+.staff-search-field svg { position: absolute; z-index: 1; top: 50%; left: 13px; width: 18px; height: 18px; fill: none; stroke: var(--muted); stroke-width: 1.4; transform: translateY(-50%); pointer-events: none; }
+.staff-search-field .field { padding-left: 42px; }
+.staff-command-sync { display: flex; align-items: center; justify-content: end; gap: 8px; min-height: 44px; color: var(--muted); font-size: 8px; letter-spacing: 0.1em; }
+.staff-command-sync i { width: 6px; height: 6px; background: var(--bureau); animation: staff-command-signal 1.5s ease-in-out infinite; }
+.staff-command-notice { margin-top: 14px; }
+.staff-command-loading { min-height: 340px; display: grid; place-items: center; margin-top: 14px; border: 1px solid var(--rule); }
+
+.staff-command-directory { margin-top: 14px; border: 1px solid var(--archive); background: var(--ledger); }
+.staff-command-directory-head { display: flex; align-items: end; justify-content: space-between; gap: 24px; padding: 20px 22px; color: var(--ledger); border-bottom: 3px solid var(--bureau); background: var(--archive); }
+.staff-command-directory-head > div { display: grid; gap: 6px; }
+.staff-command-directory-head span { color: var(--rule); font-size: 8px; letter-spacing: 0.12em; }
+.staff-command-directory-head strong { font-family: "Literata Variable", Georgia, serif; font-size: 22px; font-weight: 570; }
+.staff-command-list { display: grid; }
+.staff-command-row { display: grid; grid-template-columns: 34px minmax(250px, 2fr) minmax(100px, 0.7fr) minmax(74px, 0.5fr) minmax(180px, 1fr) 72px; align-items: center; gap: 14px; width: 100%; min-height: 76px; padding: 12px 16px; color: var(--archive); border: 0; border-bottom: 1px solid var(--rule); background: transparent; text-align: left; cursor: pointer; transition: background 150ms ease, padding 150ms ease; }
+.staff-command-row { content-visibility: auto; contain-intrinsic-size: auto 76px; }
+.staff-command-row:last-child { border-bottom: 0; }
+.staff-command-row:hover, .staff-command-row.is-selected { padding-left: 20px; background: color-mix(in srgb, var(--rule) 25%, transparent); }
+.staff-command-row.is-selected { box-shadow: inset 3px 0 0 var(--refusal); }
+.staff-command-index { color: var(--muted); font-size: 8px; }
+.staff-command-person { display: grid; gap: 6px; min-width: 0; }
+.staff-command-person > strong { display: flex; align-items: center; gap: 6px; overflow: hidden; font-size: 14px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.staff-command-person small { overflow: hidden; color: var(--muted); font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+.staff-command-department, .staff-command-grade { display: grid; gap: 6px; }
+.staff-command-department small, .staff-command-grade small { color: var(--muted); font-size: 7px; letter-spacing: 0.1em; }
+.staff-command-department strong { font-size: 11px; font-weight: 600; }
+.staff-command-grade strong { font-size: 11px; font-weight: 500; }
+.staff-command-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.staff-command-tags .pill { padding: 4px 6px; font-size: 8px; }
+.staff-command-open { display: inline-flex; align-items: center; justify-content: end; gap: 7px; color: var(--bureau); font-size: 8px; letter-spacing: 0.1em; }
+.staff-command-open i { font-style: normal; transition: transform 140ms ease; }
+.staff-command-row:hover .staff-command-open i { transform: translateX(3px); }
+.staff-command-empty { display: grid; justify-items: start; gap: 8px; min-height: 240px; place-content: center; color: var(--muted); }
+.staff-command-empty strong { color: var(--archive); font-family: "Literata Variable", Georgia, serif; font-size: 24px; }
+
+.personnel-editor { margin-top: 14px; border: 1px solid var(--archive); background: var(--ledger); animation: personnel-editor-arrive 240ms var(--ease-instrument) both; }
+.personnel-editor > header { display: flex; align-items: start; justify-content: space-between; gap: 24px; padding: 26px; color: var(--ledger); border-bottom: 3px solid var(--refusal); background: var(--archive); }
+.personnel-editor-identity { display: grid; gap: 9px; }
+.personnel-editor-identity .eyebrow { color: color-mix(in srgb, var(--refusal) 60%, var(--ledger)); }
+.personnel-editor-identity h2 { display: flex; align-items: center; gap: 9px; margin: 0; font-size: clamp(28px, 4vw, 40px); }
+.personnel-editor-identity small { color: var(--rule); font-size: 8px; letter-spacing: 0.09em; }
+.personnel-editor > header > button { flex: 0 0 auto; width: 36px; height: 36px; color: var(--ledger); border: 1px solid color-mix(in srgb, var(--rule) 32%, transparent); background: transparent; font-size: 25px; line-height: 1; cursor: pointer; }
+.personnel-editor-body { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(290px, 0.8fr); }
+.personnel-editor-forms { border-right: 1px solid var(--archive); }
+.personnel-editor-forms > form { padding: 26px; }
+.personnel-editor-forms > form + form { border-top: 1px solid var(--archive); }
+.personnel-editor-section-head { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; align-items: start; padding-bottom: 16px; border-bottom: 1px solid var(--archive); }
+.personnel-editor-section-head > span { color: var(--refusal); font-size: 8px; }
+.personnel-editor-section-head > div { display: grid; gap: 4px; }
+.personnel-editor-section-head strong { font-family: "Literata Variable", Georgia, serif; font-size: 18px; font-weight: 580; }
+.personnel-editor-section-head small { color: var(--muted); font-size: 11px; }
+.personnel-identity-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 20px; }
+.personnel-editor-grid { display: grid; grid-template-columns: 1.5fr 0.7fr 1fr; gap: 14px; margin-top: 20px; }
+.personnel-field-help { display: block; margin-top: 7px; color: var(--muted); font-size: 10px; line-height: 1.4; }
+.personnel-editor-form-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; margin-top: 22px; }
+.personnel-editor-form-actions > span { color: var(--muted); font-size: 8px; letter-spacing: 0.1em; }
+.personnel-control-panel { padding: 26px; }
+.personnel-control-panel dl { margin: 20px 0 0; }
+.personnel-control-panel dl > div { display: flex; align-items: center; justify-content: space-between; gap: 14px; min-height: 54px; border-bottom: 1px solid var(--rule); }
+.personnel-control-panel dt { color: var(--muted); font-size: 11px; }
+.personnel-control-panel dd { margin: 0; }
+.personnel-control-panel .authority-badge { max-width: 145px; font-size: 8px; line-height: 1.2; text-align: right; }
+.personnel-none { color: var(--muted); font-size: 8px; letter-spacing: 0.1em; }
+.personnel-control-actions { display: grid; gap: 9px; margin-top: 20px; }
+.personnel-control-panel > p { margin: 14px 0 0; color: var(--muted); font-size: 10px; line-height: 1.45; }
+.personnel-editor > footer { display: flex; align-items: center; gap: 8px; padding: 13px 26px; color: var(--muted); border-top: 1px solid var(--archive); font-size: 8px; letter-spacing: 0.1em; }
+.personnel-editor > footer i { width: 6px; height: 6px; background: var(--refusal); }
+
+@keyframes staff-command-arrive { from { opacity: 0; transform: translateY(9px); } to { opacity: 1; transform: none; } }
+@keyframes personnel-editor-arrive { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+@keyframes staff-command-signal { 50% { opacity: 0.3; transform: scale(0.72); } }
+
+/* Developer root-authority treatment */
+.super-admin-shell .staff-command-head { border-color: var(--super-rule); border-right: 6px solid var(--refusal); background: color-mix(in srgb, var(--archive) 87%, black); clip-path: polygon(0 0, calc(100% - 26px) 0, 100% 26px, 100% 100%, 0 100%); }
+.super-admin-shell .staff-command-head h1 { color: var(--ledger); }
+.super-admin-shell .staff-command-head p { color: var(--muted); }
+.super-admin-shell .staff-command-clearance { border-left-color: var(--super-rule); background: color-mix(in srgb, var(--refusal) 6%, transparent); }
+.super-admin-shell .staff-command-clearance > span { color: var(--refusal); }
+.super-admin-shell .staff-command-summary { gap: 7px; padding: 7px; border-color: var(--super-rule); background: color-mix(in srgb, var(--archive) 80%, black); }
+.super-admin-shell .staff-command-summary > div { border: 1px solid var(--super-rule); background: var(--super-panel); clip-path: polygon(0 0, calc(100% - 11px) 0, 100% 11px, 100% 100%, 0 100%); }
+.super-admin-shell .staff-command-summary > div:last-child { border-right: 1px solid var(--super-rule); }
+.super-admin-shell .staff-command-summary dd { color: var(--ledger); }
+.super-admin-shell .staff-command-summary .is-clear dd { color: color-mix(in srgb, var(--bureau) 32%, var(--ledger)); }
+.super-admin-shell .staff-command-summary .is-hold dd { color: color-mix(in srgb, var(--review) 42%, var(--ledger)); }
+.super-admin-shell .staff-command-tools { border-color: var(--super-rule); background: color-mix(in srgb, var(--archive) 80%, black); }
+.super-admin-shell .staff-command-tools .field { color-scheme: dark; border-color: var(--super-rule); background: var(--super-panel); }
+.super-admin-shell .staff-command-directory { border-color: var(--super-rule); background: var(--super-panel); }
+.super-admin-shell .staff-command-directory-head { border-bottom-color: var(--refusal); background: color-mix(in srgb, var(--archive) 78%, black); }
+.super-admin-shell .staff-command-row { color: var(--ledger); border-bottom-color: var(--super-rule); }
+.super-admin-shell .staff-command-row:hover, .super-admin-shell .staff-command-row.is-selected { background: var(--super-raised); }
+.super-admin-shell .staff-command-department strong, .super-admin-shell .staff-command-grade strong { color: var(--ledger); }
+.super-admin-shell .staff-command-open { color: color-mix(in srgb, var(--bureau) 35%, var(--ledger)); }
+.super-admin-shell .staff-command-empty strong { color: var(--ledger); }
+.super-admin-shell .personnel-editor { border-color: var(--super-rule); background: var(--super-panel); }
+.super-admin-shell .personnel-editor > header { border-bottom-color: var(--refusal); background: color-mix(in srgb, var(--archive) 78%, black); }
+.super-admin-shell .personnel-editor-forms { border-right-color: var(--super-rule); }
+.super-admin-shell .personnel-editor-forms > form + form { border-top-color: var(--super-rule); }
+.super-admin-shell .personnel-editor-section-head { border-bottom-color: var(--super-rule); }
+.super-admin-shell .personnel-editor .field { color-scheme: dark; border-color: var(--super-rule); background: var(--super-raised); }
+.super-admin-shell .personnel-editor .btn-primary { color: var(--ledger); background: var(--refusal); }
+.super-admin-shell .personnel-editor .btn-primary:hover:not(:disabled) { background: color-mix(in srgb, var(--refusal) 84%, black); }
+.super-admin-shell .personnel-control-panel dl > div, .super-admin-shell .personnel-editor > footer { border-color: var(--super-rule); }
+
+@media (max-width: 1023px) {
+  .staff-command-head { min-height: 230px; }
+  .staff-command-head > div { padding: 36px; }
+  .staff-command-summary > div { padding-inline: 13px; }
+  .staff-command-row { grid-template-columns: 30px minmax(210px, 2fr) 90px 66px minmax(155px, 1fr) 62px; gap: 10px; padding-inline: 12px; }
+  .personnel-editor-body { grid-template-columns: minmax(0, 1fr); }
+  .personnel-editor-forms { border-right: 0; border-bottom: 1px solid var(--archive); }
+}
+
+@media (max-width: 820px) {
+  .staff-command-head { grid-template-columns: minmax(0, 1fr); }
+  .staff-command-clearance { border-top: 1px solid var(--archive); border-left: 0; }
+  .staff-command-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .staff-command-summary > div { border-bottom: 1px solid var(--archive); }
+  .staff-command-summary > div:nth-child(2n) { border-right: 0; }
+  .staff-command-summary > div:last-child { grid-column: span 2; }
+  .staff-command-tools { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .staff-command-sync { grid-column: span 2; justify-content: start; min-height: 18px; }
+  .staff-command-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 10px; }
+  .staff-command-row { grid-template-columns: 28px minmax(0, 1fr) auto; gap: 11px; min-width: 0; padding: 15px; border: 1px solid var(--archive); }
+  .staff-command-row:last-child { border-bottom: 1px solid var(--archive); }
+  .staff-command-row:hover, .staff-command-row.is-selected { padding-left: 18px; }
+  .staff-command-person { grid-column: 2 / 4; }
+  .staff-command-department { grid-column: 2; }
+  .staff-command-grade { grid-column: 3; }
+  .staff-command-tags { grid-column: 2 / 4; }
+  .staff-command-open { grid-column: 2 / 4; justify-content: start; padding-top: 10px; border-top: 1px solid var(--rule); }
+  .super-admin-shell .staff-command-clearance { border-top-color: var(--super-rule); }
+  .super-admin-shell .staff-command-summary > div, .super-admin-shell .staff-command-summary > div:last-child { border-right: 1px solid var(--super-rule); border-bottom-color: var(--super-rule); }
+  .super-admin-shell .staff-command-summary > div:nth-child(2n) { border-right: 1px solid var(--super-rule); }
+  .super-admin-shell .staff-command-row { border-color: var(--super-rule); background: var(--super-panel); }
+  .super-admin-shell .staff-command-open { border-top-color: var(--super-rule); }
+  .super-admin-shell .personnel-editor-forms { border-bottom-color: var(--super-rule); }
+}
+
+@media (max-width: 600px) {
+  .staff-command-head > div { padding: 32px 22px; }
+  .staff-command-head h1 { font-size: 43px; }
+  .staff-command-clearance { padding: 24px 22px; }
+  .staff-command-tools { grid-template-columns: minmax(0, 1fr); padding: 16px; }
+  .staff-command-sync { grid-column: auto; }
+  .staff-command-directory-head { align-items: start; flex-direction: column; gap: 12px; padding: 18px 16px; }
+  .staff-command-list { grid-template-columns: minmax(0, 1fr); padding: 8px; }
+  .personnel-editor > header { padding: 20px 18px; }
+  .personnel-editor-identity h2 { font-size: 29px; }
+  .personnel-editor-forms > form, .personnel-control-panel { padding: 20px 18px; }
+  .personnel-identity-grid { grid-template-columns: minmax(0, 1fr); }
+  .personnel-editor-grid { grid-template-columns: minmax(0, 1fr); }
+  .personnel-editor-form-actions .btn { width: 100%; }
+  .personnel-editor > footer { align-items: start; padding-inline: 18px; line-height: 1.5; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .staff-command-sync i { animation: none; }
+  .staff-command-row:hover .staff-command-open i { transform: none; }
+}
