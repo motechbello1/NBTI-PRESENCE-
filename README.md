@@ -79,22 +79,21 @@ supabase db push
 
 ### 2a. Presence Intelligence
 
-The report writer and assistant run in the supplied `presence-intelligence`
-Edge Function. The AI key never enters the Vite application. Deploy the
-function with JWT verification enabled, then set its server-side secrets:
+Report permissions and attendance evidence run in the supplied
+`presence-intelligence` Edge Function. Model generation runs in the Vercel
+Function at `api/presence-intelligence.js`, using Vercel's short-lived OIDC
+identity. No AI key enters the Vite application or needs to be stored in
+Supabase. Deploy the Edge Function with JWT verification enabled:
 
 ```bash
 supabase functions deploy presence-intelligence
-supabase secrets set AI_GATEWAY_API_KEY=your-gateway-key
-supabase secrets set AI_MODEL_ID=openai/gpt-5.4-mini
 ```
 
-`AI_MODEL_ID` can be any current text model exposed by Vercel AI Gateway. A
-free model can be selected for development, but NBTI should review that
-provider's retention and training terms before sending government attendance
-aggregates to it. The default compact OpenAI model is chosen for report quality,
-not because the platform depends on OpenAI. Switching providers is one secret
-change.
+The Vercel Function defaults to `inclusionai/ling-3.0-tiny-free`. Set the
+server-side `AI_MODEL_ID` environment variable to switch to another current
+Vercel AI Gateway model without changing application code. Before formal
+rollout, NBTI should review the chosen provider's retention, training and data
+residency terms.
 
 The function first validates the caller's bearer token and profile. Staff
 without an appointment receive only their own evidence. Directors and HODs
@@ -104,9 +103,11 @@ use Board scope. The privileged database key remains inside the Edge Function
 and is used only after this explicit authority check. The browser cannot use it
 to query department records directly.
 
-The model receives aggregate attendance evidence, not raw face descriptors,
-incident frames or exact coordinates. Generated findings are advisory and
-remain visually separate from the source charts and register. Report approvals,
+The model endpoint forwards the caller's bearer token to the Edge Function.
+That service validates report authority before it builds evidence. The model
+receives aggregate attendance evidence, not raw face descriptors, incident
+frames or exact coordinates. Generated findings are advisory and remain
+visually separate from the source charts and register. Report approvals,
 refusals and revocations are written to the audit log. Absence approvals never
 overwrite a day with an actual sign-in.
 

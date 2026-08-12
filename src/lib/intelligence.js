@@ -32,8 +32,36 @@ export async function invokeIntelligence(body) {
   );
 }
 
+async function invokeModel(body) {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) {
+    throw new IntelligenceError("Sign in again to use Presence Intelligence.", { code: "AUTH_REQUIRED" });
+  }
+
+  let response;
+  try {
+    response = await fetch("/api/presence-intelligence", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    throw new IntelligenceError("Presence Intelligence is unavailable. Try again in a moment.");
+  }
+
+  const payload = await response.json().catch(() => null);
+  if (response.ok) return payload;
+  throw new IntelligenceError(
+    payload?.error || "Presence Intelligence is unavailable. Try again in a moment.",
+    { code: payload?.code, evidence: payload?.evidence },
+  );
+}
+
 export function generateAttendanceBrief({ from, to, scope, departmentId, userId }) {
-  return invokeIntelligence({
+  return invokeModel({
     mode: "report",
     from,
     to,
@@ -90,7 +118,7 @@ export function decideAbsence({ absenceId, decision, decisionNote }) {
 }
 
 export function askPresenceIntelligence({ messages, from, to, scope, departmentId, userId }) {
-  return invokeIntelligence({
+  return invokeModel({
     mode: "chat",
     messages,
     from,

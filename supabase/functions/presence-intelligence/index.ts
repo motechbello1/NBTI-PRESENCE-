@@ -15,7 +15,7 @@ const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const DEFAULT_MODEL = "openai/gpt-5.4-mini";
 const MAX_DELEGATION_DAYS = 366;
 
-type IntelligenceMode = "capabilities" | "request_access" | "decide_access" | "revoke_access" | "request_absence" | "decide_absence" | "evidence" | "report" | "chat";
+type IntelligenceMode = "capabilities" | "request_access" | "decide_access" | "revoke_access" | "request_absence" | "decide_absence" | "evidence" | "assistant_evidence" | "report" | "chat";
 type RequestBody = {
   mode?: IntelligenceMode;
   from?: string;
@@ -407,7 +407,7 @@ Deno.serve(async (req: Request) => {
   const scopeLabel = scope === "board" ? "National Board for Technology Incubation" : scope === "department" ? selectedDepartment : selectedIndividual;
   const reportStaff = (staff || []).map((person) => ({ ...person, departments: relation(person.departments) }));
   const evidence = buildReportEvidence({ rows, staff: reportStaff, from, to, scope, scopeLabel });
-  if (mode === "evidence") return respond({ evidence, access });
+  if (mode === "evidence" || mode === "assistant_evidence") return respond({ evidence, access });
 
   const apiKey = Deno.env.get("AI_GATEWAY_API_KEY");
   if (!apiKey) return respond({ error: "Presence Intelligence has not been configured by ICT.", code: "AI_NOT_CONFIGURED", evidence }, 503);
