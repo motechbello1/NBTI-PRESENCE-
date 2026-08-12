@@ -83,15 +83,50 @@ export function Shell({ children }) {
 /* ── SEAL ─────────────────────────────────────────────── */
 /* A rotated square with a centre dot. Reads as an official stamp
    without being a literal coat of arms. */
-export function Seal({ size = 22 }) {
+export function Seal({ size = 28 }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden>
-      <rect x="4.5" y="4.5" width="15" height="15" transform="rotate(45 12 12)"
-            fill="none" stroke="var(--beam)" strokeWidth="1.4" />
-      <rect x="8" y="8" width="8" height="8" transform="rotate(45 12 12)"
-            fill="none" stroke="var(--line)" strokeWidth="1" />
-      <circle cx="12" cy="12" r="2.4" fill="var(--clear)" />
+    <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
+      <path d="M1.5 8.5v-7h21.8l7.2 7.2v21.8h-29z" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M23.3 1.5v7.2h7.2M7.5 12V7.5H12M20 7.5h4.5V12M24.5 20v4.5H20M12 24.5H7.5V20" fill="none" stroke="currentColor" strokeWidth="1.25" />
+      <circle cx="16" cy="16" r="3" fill="var(--bureau)" />
+      <path d="M16 11v10M11 16h10" stroke="var(--ledger)" strokeWidth="1" />
     </svg>
+  );
+}
+
+export function Wordmark({ compact = false }) {
+  return (
+    <div className="brand-lockup">
+      <Seal />
+      <div>
+        <div className="brand-name">NBTI <span>Presence</span></div>
+        {!compact && <div className="brand-agency">National Board for Technology Incubation</div>}
+      </div>
+    </div>
+  );
+}
+
+export function SecurityRail({ className = "" }) {
+  return (
+    <svg className={`security-rail ${className}`} viewBox="0 0 36 360" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M18 0C3 18 33 36 18 54S3 90 18 108s15 36 0 54-15 36 0 54 15 36 0 54-15 36 0 54 15 36 0 54" />
+      <path d="M18 0c15 18-15 36 0 54s15 36 0 54-15 36 0 54 15 36 0 54-15 36 0 54 15 36 0 54-15 36 0 54" />
+      <path d="M7 0c22 22 22 32 0 54s-22 32 0 54 22 32 0 54-22 32 0 54 22 32 0 54-22 32 0 54 22 32 0 54" />
+      <path d="M29 0C7 22 7 32 29 54s22 32 0 54-22 32 0 54 22 32 0 54-22 32 0 54 22 32 0 54-22 32 0 54" />
+    </svg>
+  );
+}
+
+export function SplashScreen() {
+  return (
+    <div className="splash" role="status" aria-label="Starting NBTI Presence">
+      <div className="splash-mark"><Seal size={42} /></div>
+      <div className="splash-copy">
+        <div className="brand-name">NBTI <span>Presence</span></div>
+        <div className="mono splash-status">Preparing verification register</div>
+      </div>
+      <div className="splash-meter" aria-hidden="true"><span /></div>
+    </div>
   );
 }
 

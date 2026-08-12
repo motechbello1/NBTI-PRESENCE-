@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
-import { Spinner, Seal } from "./components/UI";
+import { SplashScreen } from "./components/UI";
 
 import Login from "./pages/Login";
 import CreateAccount from "./pages/CreateAccount";
@@ -16,14 +16,7 @@ import Reports from "./pages/admin/Reports";
 import Settings from "./pages/admin/Settings";
 
 function Booting() {
-  return (
-    <div className="min-h-screen grid place-items-center">
-      <div className="text-center">
-        <div className="flex justify-center mb-4"><Seal size={30} /></div>
-        <Spinner label="Starting" />
-      </div>
-    </div>
-  );
+  return <SplashScreen />;
 }
 
 function RequireAuth({ children }) {
