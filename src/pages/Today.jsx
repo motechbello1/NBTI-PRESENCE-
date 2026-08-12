@@ -1,7 +1,7 @@
 import { useEffect, useState, lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { Shell, PageHead, Notice, Pill, StatusPill, Spinner } from "../components/UI";
+import { Shell, Notice, Pill, StatusPill, Spinner } from "../components/UI";
 const VerifyFlow = lazy(() => import("../components/VerifyFlow"));
 import { getTodayRecord, signIn, signOut } from "../lib/db";
 
@@ -54,60 +54,80 @@ export default function Today() {
   if (!profile?.face_enrolled) {
     return (
       <Shell>
-        <PageHead eyebrow="Attendance" title="Enrol your face first" />
-        <Notice tone="hold" title="One setup step remains">
-          Attendance works by matching your face against a record you create once.
-          Until that record exists there is nothing to match against.{" "}
-          <Link to="/profile" className="text-beam hover:underline">Enrol your face</Link>, it takes under a minute.
-        </Notice>
+        <section className="today-enrolment" aria-labelledby="enrolment-needed-title">
+          <div className="mono today-reference">ATTENDANCE HOLD · ENROLMENT REQUIRED</div>
+          <div className="eyebrow">One setup step remains</div>
+          <h1 id="enrolment-needed-title" className="display">Create your face record before attendance begins.</h1>
+          <p>
+            The system cannot confirm identity until your account contains an enrolment.
+            Four guided positions are captured as measurements; routine attendance video is not stored.
+          </p>
+          <div className="today-enrolment-actions">
+            <Link to="/profile" className="btn btn-primary">Start face enrolment</Link>
+            <span className="mono">Usually under one minute</span>
+          </div>
+        </section>
       </Shell>
     );
   }
 
+  const pageTitle = record?.sign_out_at ? "Attendance complete" : record?.sign_in_at ? "You are signed in" : "Attendance not recorded";
+  const pageState = record?.sign_out_at ? "Closed" : record?.sign_in_at ? "On site" : "Action required";
+  const actionTitle = record?.sign_out_at ? "Today’s register is complete" : record?.sign_in_at ? "Record your departure" : "Record your arrival";
+
   return (
     <Shell>
-      <PageHead
-        eyebrow={now.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
-        title={record?.sign_out_at ? "Day complete" : record?.sign_in_at ? "Signed in" : "Not signed in"}
-      >
-        {isAdmin && <Link to="/admin" className="btn btn-ghost">Administration</Link>}
-      </PageHead>
+      <section className="today-page">
+        <header className="today-head">
+          <div>
+            <div className="eyebrow">{now.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</div>
+            <h1 className="display">{pageTitle}</h1>
+          </div>
+          <div className="today-head-actions">
+            <span className={`today-state ${record?.sign_in_at ? "is-clear" : "is-hold"}`}><i aria-hidden="true" />{pageState}</span>
+            {isAdmin ? <Link to="/admin" className="btn btn-ghost">Administration</Link> : null}
+          </div>
+        </header>
 
-      <div className="grid lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)] gap-6">
-        {/* ── CREDENTIAL CARD ─────────────────────────── */}
-        <div className="space-y-4">
-          <div className="panel-raised notched p-5">
-            <div className="eyebrow mb-4">Staff credential</div>
-            <div className="display text-[22px] leading-tight mb-1">{profile.full_name}</div>
-            <div className="mono text-[12px] text-muted mb-5">{profile.staff_id || "No staff number"}</div>
+        <div className="today-layout">
+          <aside className="today-record" aria-label="Staff credential and today's record">
+            <div className="today-credential notched">
+              <div className="today-credential-top">
+                <span className="mono">STAFF CREDENTIAL</span>
+                <span className="mono">P-03</span>
+              </div>
+              <div className="today-credential-name display">{profile.full_name}</div>
+              <div className="today-credential-id mono">{profile.staff_id || "No staff number"}</div>
 
-            <dl className="space-y-2.5 border-t border-line pt-4">
-              <Row k="Department" v={profile.departments?.name || "Unassigned"} />
-              <Row k="Grade" v={profile.grade_level || "—"} />
-              <Row k="Sign in" v={timeOf(record?.sign_in_at)} />
-              <Row k="Sign out" v={timeOf(record?.sign_out_at)} />
-              <Row k="Hours" v={record?.hours_worked ? `${record.hours_worked}h` : "—"} />
-            </dl>
+              <dl className="today-credential-details">
+                <Row k="Department" v={profile.departments?.name || "Unassigned"} />
+                <Row k="Grade" v={profile.grade_level || "—"} />
+              </dl>
 
-            <div className="mt-4 pt-4 border-t border-line flex flex-wrap gap-2">
-              <StatusPill status={record?.status} />
-              {record?.early_departure && <Pill tone="hold">Left early</Pill>}
-              {record?.marked_by && <Pill tone="mute">Marked by admin</Pill>}
+              <div className="today-machine-readings">
+                <div><span className="mono">SIGN IN</span><strong className="mono">{timeOf(record?.sign_in_at)}</strong></div>
+                <div><span className="mono">SIGN OUT</span><strong className="mono">{timeOf(record?.sign_out_at)}</strong></div>
+                <div><span className="mono">HOURS</span><strong className="mono">{record?.hours_worked ? `${record.hours_worked}h` : "—"}</strong></div>
+              </div>
+
+              <div className="today-credential-status">
+                <StatusPill status={record?.status} />
+                {record?.early_departure ? <Pill tone="hold">Left early</Pill> : null}
+                {record?.marked_by ? <Pill tone="mute">Marked by admin</Pill> : null}
+              </div>
             </div>
-          </div>
 
-          <div className="panel p-4">
-            <div className="eyebrow mb-3">Office hours</div>
-            <dl className="space-y-2">
-              <Row k="Start" v={`${settings.work_start} (+${settings.grace_minutes}m grace)`} />
-              <Row k="End" v={settings.work_end} />
-              <Row k="Minimum" v={`${settings.min_hours} hours`} />
-            </dl>
-          </div>
-        </div>
+            <div className="today-office-register">
+              <div className="eyebrow">Official work period</div>
+              <dl>
+                <Row k="Start" v={`${settings.work_start} (+${settings.grace_minutes}m)`} />
+                <Row k="End" v={settings.work_end} />
+                <Row k="Minimum" v={`${settings.min_hours} hours`} />
+              </dl>
+            </div>
+          </aside>
 
-        {/* ── ACTION SIDE ─────────────────────────────── */}
-        <div className="space-y-5">
+          <section className="today-action" aria-labelledby="today-action-title">
           {saved && (
             <Notice tone="clear" title={saved === "in" ? "Signed in" : "Signed out"}>
               {saved === "in"
@@ -119,74 +139,72 @@ export default function Today() {
           {error && <Notice tone="deny" title="Could not save">{error}</Notice>}
 
           {mode ? (
-            <>
+            <div className="today-verification">
               {mode === "in" && wouldBeLate && (
-                <div className="panel p-4">
-                  <label className="label">You are past {settings.work_start}. Reason for lateness</label>
-                  <textarea className="field" rows={2} value={reason}
+                <div className="today-reason">
+                  <label className="label" htmlFor="late-reason">You are past {settings.work_start}. Reason for lateness</label>
+                  <textarea id="late-reason" className="field" rows={2} value={reason}
                             onChange={(e) => setReason(e.target.value)}
                             placeholder="Traffic on Airport Road, hospital appointment, official assignment" />
                 </div>
               )}
               {mode === "out" && wouldBeEarly && (
-                <div className="panel p-4">
-                  <label className="label">You are leaving before {settings.work_end}. Reason</label>
-                  <textarea className="field" rows={2} value={reason}
+                <div className="today-reason">
+                  <label className="label" htmlFor="early-reason">You are leaving before {settings.work_end}. Reason</label>
+                  <textarea id="early-reason" className="field" rows={2} value={reason}
                             onChange={(e) => setReason(e.target.value)}
                             placeholder="Approved permission, official duty off site, medical" />
                 </div>
               )}
-              <Suspense fallback={<div className="panel p-8"><Spinner label="Loading the verification engine" /></div>}>
+              <Suspense fallback={<div className="today-engine-loading"><Spinner label="Loading the verification engine" /></div>}>
                 <VerifyFlow mode={mode} onVerified={onVerified} onCancel={() => { setMode(null); setReason(""); }} />
               </Suspense>
-            </>
+            </div>
           ) : (
-            <div className="panel p-6">
-              {!record?.sign_in_at && (
-                <>
-                  <h2 className="display text-[22px] mb-2">Record your arrival</h2>
-                  <p className="text-[14px] text-muted leading-relaxed mb-5">
-                    The check takes about fifteen seconds. Stand where there is light on
-                    your face, hold your own device, and make sure nobody else is in frame.
-                  </p>
-                  <button className="btn btn-primary" onClick={() => setMode("in")}>Sign in</button>
-                </>
-              )}
+            <div className="today-action-sheet">
+              <div className="mono today-action-reference">ATTENDANCE ACTION · FORM P-03</div>
+              <div className="eyebrow">Today’s required action</div>
+              <h2 id="today-action-title" className="display">{actionTitle}</h2>
+              <p>
+                {!record?.sign_in_at
+                  ? "Allow about fifteen seconds. Face a light source, hold your own device and keep everyone else outside the frame."
+                  : !record?.sign_out_at
+                    ? `Your arrival was recorded at ${timeOf(record.sign_in_at)}. Complete the same four checks before leaving.`
+                    : `Arrival ${timeOf(record.sign_in_at)} · departure ${timeOf(record.sign_out_at)} · ${record.hours_worked}h recorded on site.`}
+              </p>
 
-              {record?.sign_in_at && !record?.sign_out_at && (
-                <>
-                  <h2 className="display text-[22px] mb-2">Record your departure</h2>
-                  <p className="text-[14px] text-muted leading-relaxed mb-5">
-                    You signed in at {timeOf(record.sign_in_at)}. Sign out when you leave so
-                    your hours for the day are counted.
-                  </p>
-                  <button className="btn btn-primary" onClick={() => setMode("out")}>Sign out</button>
-                </>
-              )}
+              {!record?.sign_out_at ? (
+                <ol className="today-gate-preview" aria-label="Checks required before attendance is recorded">
+                  {["Location", "Liveness", "Surroundings", "Identity"].map((gate, index) => (
+                    <li key={gate}><span className="mono">{String(index + 1).padStart(2, "0")}</span><strong>{gate}</strong><small>Will check</small></li>
+                  ))}
+                </ol>
+              ) : null}
 
-              {record?.sign_out_at && (
-                <>
-                  <h2 className="display text-[22px] mb-2">Nothing left to do today</h2>
-                  <p className="text-[14px] text-muted leading-relaxed">
-                    In at {timeOf(record.sign_in_at)}, out at {timeOf(record.sign_out_at)},
-                    {" "}{record.hours_worked}h on site.{" "}
-                    <Link to="/history" className="text-beam hover:underline">See your record</Link>.
-                  </p>
-                </>
-              )}
+              <div className="today-action-footer">
+                {!record?.sign_in_at ? (
+                  <button className="btn btn-primary" onClick={() => setMode("in")}>Begin sign in</button>
+                ) : !record?.sign_out_at ? (
+                  <button className="btn btn-primary" onClick={() => setMode("out")}>Begin sign out</button>
+                ) : (
+                  <Link to="/history" className="btn btn-ghost">View attendance history</Link>
+                )}
+                <span className="mono">Camera opens only during verification</span>
+              </div>
             </div>
           )}
+          </section>
         </div>
-      </div>
+      </section>
     </Shell>
   );
 }
 
 function Row({ k, v }) {
   return (
-    <div className="flex justify-between gap-4 items-baseline">
-      <dt className="mono text-[10px] text-muted uppercase tracking-wider">{k}</dt>
-      <dd className="mono text-[13px] text-right">{v}</dd>
+    <div className="credential-row">
+      <dt className="mono">{k}</dt>
+      <dd>{v}</dd>
     </div>
   );
 }

@@ -1,81 +1,100 @@
+import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 /* ── SHELL ────────────────────────────────────────────── */
 
+const ADMIN_LINKS = [
+  ["/admin", "Overview"],
+  ["/admin/register", "Register"],
+  ["/admin/staff", "Staff"],
+  ["/admin/flags", "Incidents"],
+  ["/admin/reports", "Reports"],
+  ["/admin/settings", "Settings"],
+];
+
+const STAFF_LINKS = [
+  ["/", "Today"],
+  ["/history", "My record"],
+  ["/profile", "Profile"],
+];
+
 export function Shell({ children }) {
   const { profile, isAdmin, signOutOfApp } = useAuth();
   const nav = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const links = isAdmin ? ADMIN_LINKS : STAFF_LINKS;
 
-  const links = isAdmin
-    ? [
-        ["/admin", "Overview"],
-        ["/admin/register", "Register"],
-        ["/admin/staff", "Staff"],
-        ["/admin/flags", "Incidents"],
-        ["/admin/reports", "Reports"],
-        ["/admin/settings", "Settings"],
-      ]
-    : [
-        ["/", "Today"],
-        ["/history", "My record"],
-        ["/profile", "Profile"],
-      ];
+  const navigation = (mobile = false) => (
+    <nav className={mobile ? "app-mobile-nav" : "app-nav"} aria-label={isAdmin ? "Administration" : "Staff account"}>
+      {links.map(([to, label]) => (
+        <NavLink
+          key={to}
+          to={to}
+          end={to === "/" || to === "/admin"}
+          onClick={() => setMenuOpen(false)}
+          className={({ isActive }) => isActive ? "app-nav-link is-active" : "app-nav-link"}
+        >
+          <span>{label}</span>
+          <span className="app-nav-rule" aria-hidden="true" />
+        </NavLink>
+      ))}
+    </nav>
+  );
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="sticky top-0 z-40 border-b border-line bg-ink/95 backdrop-blur">
-        <div className="max-w-[1240px] mx-auto px-4 md:px-6 h-14 flex items-center gap-4">
-          <button
-            onClick={() => nav(isAdmin ? "/admin" : "/")}
-            className="flex items-center gap-2.5 shrink-0"
-          >
-            <Seal />
-            <span className="display text-[15px] tracking-tight hidden sm:block">
-              NBTI <span className="text-beam">PRESENCE</span>
-            </span>
-          </button>
+    <div className="app-shell">
+      <aside className="app-rail">
+        <button className="app-home" onClick={() => nav(isAdmin ? "/admin" : "/")} aria-label="NBTI Presence home">
+          <Wordmark />
+        </button>
 
-          <nav className="flex-1 flex items-center gap-1 overflow-x-auto no-scrollbar">
-            {links.map(([to, label]) => (
-              <NavLink
-                key={to}
-                to={to}
-                end={to === "/" || to === "/admin"}
-                className={({ isActive }) =>
-                  `px-3 py-1.5 rounded-sm text-[13px] font-medium whitespace-nowrap transition-colors ${
-                    isActive ? "bg-raised text-paper" : "text-muted hover:text-paper"
-                  }`
-                }
-              >
-                {label}
-              </NavLink>
-            ))}
-          </nav>
+        <div className="app-rail-section mono">{isAdmin ? "Administration" : "Staff register"}</div>
+        {navigation()}
 
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="text-right hidden md:block leading-tight">
-              <div className="text-[13px] font-medium">{profile?.full_name}</div>
-              <div className="mono text-[10px] text-muted uppercase tracking-wider">
-                {isAdmin ? "Administrator" : profile?.staff_id || "Staff"}
-              </div>
-            </div>
-            <button onClick={signOutOfApp} className="mono text-[11px] text-muted hover:text-deny uppercase tracking-wider">
-              Exit
-            </button>
-          </div>
+        <div className="app-identity">
+          <div className="app-identity-name">{profile?.full_name}</div>
+          <div className="mono app-identity-code">{isAdmin ? "Administrator" : profile?.staff_id || "Staff"}</div>
+          <button onClick={signOutOfApp} className="app-sign-out">Sign out</button>
         </div>
+
+        <div className="app-agency mono">National Board for Technology Incubation</div>
+      </aside>
+
+      <header className="app-mobile-header">
+        <button onClick={() => nav(isAdmin ? "/admin" : "/")} aria-label="NBTI Presence home"><Wordmark compact /></button>
+        <button className="app-menu-button" type="button" onClick={() => setMenuOpen(true)} aria-expanded={menuOpen} aria-controls="mobile-navigation">
+          <span>Menu</span>
+          <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+            <path d="M3 6h14M3 10h14M3 14h14" stroke="currentColor" strokeWidth="1.5" />
+          </svg>
+        </button>
       </header>
 
-      <main className="flex-1 max-w-[1240px] w-full mx-auto px-4 md:px-6 py-6 md:py-8">
-        {children}
-      </main>
-
-      <footer className="border-t border-line py-4">
-        <div className="max-w-[1240px] mx-auto px-4 md:px-6 mono text-[10px] text-muted tracking-wider uppercase">
-          National Board for Technology Incubation · ICT Department
+      {menuOpen ? (
+        <div className="app-mobile-drawer" id="mobile-navigation" role="dialog" aria-modal="true" aria-label="Navigation menu">
+          <button className="app-drawer-scrim" onClick={() => setMenuOpen(false)} aria-label="Close navigation" />
+          <div className="app-drawer-panel">
+            <div className="app-drawer-head">
+              <div className="mono">{isAdmin ? "Administration" : "Staff register"}</div>
+              <button onClick={() => setMenuOpen(false)} aria-label="Close navigation">
+                <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4l12 12M16 4L4 16" stroke="currentColor" strokeWidth="1.5" /></svg>
+              </button>
+            </div>
+            {navigation(true)}
+            <div className="app-drawer-identity">
+              <span>{profile?.full_name}</span>
+              <span className="mono">{profile?.staff_id || (isAdmin ? "Administrator" : "Staff")}</span>
+              <button onClick={signOutOfApp}>Sign out</button>
+            </div>
+          </div>
         </div>
-      </footer>
+      ) : null}
+
+      <div className="app-stage">
+        <main className="app-content">{children}</main>
+        <footer className="app-footer mono">NBTI Presence · ICT-managed attendance instrument</footer>
+      </div>
     </div>
   );
 }
@@ -157,10 +176,11 @@ export function GateStrip({ states }) {
   const text = { pending: "Waiting", active: "Checking", clear: "Cleared", deny: "Refused" };
   return (
     <div className="gate-strip">
-      {GATES.map((g) => (
+      {GATES.map((g, index) => (
         <div key={g.key} className="gate" data-state={states[g.key] || "pending"}>
+          <span className="gate-number mono">{String(index + 1).padStart(2, "0")}</span>
           <span className="gate-label">{g.label}</span>
-          <span className="gate-state">{text[states[g.key] || "pending"]}</span>
+          <span className="gate-state"><i aria-hidden="true" />{text[states[g.key] || "pending"]}</span>
         </div>
       ))}
     </div>

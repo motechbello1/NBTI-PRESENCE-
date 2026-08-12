@@ -11,6 +11,21 @@ import { readPosition, checkPerimeter, formatDistance } from "../lib/geo";
 import { deviceFingerprint } from "../lib/device";
 import { getMyEnrolments, raiseFlag, sharedDeviceCount } from "../lib/db";
 
+function DirectionCue({ direction }) {
+  const paths = {
+    left: "M18 5l-7 7 7 7M11 12h15",
+    right: "M14 5l7 7-7 7M21 12H6",
+    up: "M5 14l7-7 7 7M12 7v15",
+  };
+  return (
+    <div className={`cue cue-${direction}`} aria-hidden="true">
+      <svg width="32" height="32" viewBox="0 0 32 32">
+        <path d={paths[direction]} fill="none" stroke="currentColor" strokeWidth="1.8" />
+      </svg>
+    </div>
+  );
+}
+
 /**
  * One attendance check, start to finish.
  *
@@ -313,73 +328,88 @@ export default function VerifyFlow({ mode = "in", onVerified, onCancel }) {
   /* ── render ─────────────────────────────────────────── */
   const R = 158;
   const CIRC = 2 * Math.PI * R;
+  const clearedGates = Object.values(gates).filter((state) => state === "clear").length;
+  const activeFraction = phase === "running" ? Math.min(1, ring) : Object.values(gates).includes("active") ? 0.2 : 0;
+  const instrumentProgress = phase === "passed" ? 1 : Math.min(1, (clearedGates + activeFraction) / 4);
 
   return (
-    <div className="space-y-5">
-      <GateStrip states={gates} />
+    <div className="verify-flow">
+      <div className="verification-instrument" data-phase={phase}>
+        <header className="verify-head">
+          <div>
+            <span className="mono">LIVE VERIFICATION · {mode === "in" ? "ARRIVAL" : "DEPARTURE"}</span>
+            <strong>Four-gate reading</strong>
+          </div>
+          <span className="mono verify-run-state">{phase === "idle" ? "READY" : phase.toUpperCase()}</span>
+        </header>
 
-      <div className="panel p-5 md:p-6">
-        <div className="scan-frame">
-          <video ref={videoRef} playsInline muted autoPlay />
-          {phase === "running" && <div className="sweep" />}
-          {cue === "left" && <div className="cue cue-left">◄</div>}
-          {cue === "right" && <div className="cue cue-right">►</div>}
-          {cue === "up" && <div className="cue cue-up">▲</div>}
+        <div className="verify-grid">
+          <GateStrip states={gates} />
 
-          <svg className="scan-ring" viewBox="0 0 340 340">
-            <circle cx="170" cy="170" r={R} stroke="var(--line)" strokeWidth="3" />
-            <circle
-              cx="170" cy="170" r={R}
-              stroke={phase === "refused" ? "var(--deny)" : "var(--beam)"}
-              strokeWidth="3"
-              strokeDasharray={CIRC}
-              strokeDashoffset={CIRC * (1 - Math.min(1, ring))}
-              style={{ transition: "stroke-dashoffset 220ms linear" }}
-            />
-          </svg>
+          <div className="verify-chamber">
+            <div className="scan-frame">
+              <video ref={videoRef} playsInline muted autoPlay aria-label="Live camera view for attendance verification" />
+              {phase === "running" ? <div className="sweep" /> : null}
+              {cue ? <DirectionCue direction={cue} /> : null}
+              <div className="scan-reticle" aria-hidden="true"><i /><i /><i /><i /></div>
 
-          {phase === "idle" && (
-            <div className="absolute inset-0 grid place-items-center bg-ink/80 px-6 text-center">
-              <p className="text-[13px] text-muted leading-relaxed">
-                The camera opens only for this check and the video is never uploaded.
-              </p>
+              <svg className="scan-ring" viewBox="0 0 340 340" aria-hidden="true">
+                <circle cx="170" cy="170" r={R} stroke="color-mix(in srgb, var(--ledger) 22%, transparent)" strokeWidth="3" />
+                <circle
+                  cx="170" cy="170" r={R}
+                  stroke={phase === "refused" ? "var(--deny)" : "var(--beam)"}
+                  strokeWidth="4"
+                  strokeDasharray={CIRC}
+                  strokeDashoffset={CIRC * (1 - instrumentProgress)}
+                  style={{ transition: "stroke-dashoffset 220ms linear, stroke 180ms ease" }}
+                />
+              </svg>
+
+              {phase === "idle" ? (
+                <div className="scan-privacy">
+                  <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
+                    <path d="M6 10h4l2-3h6l2 3h4v14H6z" fill="none" stroke="currentColor" strokeWidth="1.4" />
+                    <circle cx="15" cy="17" r="4" fill="none" stroke="currentColor" strokeWidth="1.4" />
+                  </svg>
+                  <p>The camera opens only for this check. Live video is not uploaded.</p>
+                </div>
+              ) : null}
             </div>
-          )}
-        </div>
 
-        <div className="mt-5 text-center min-h-[62px]">
-          {phase === "running" && (
-            <>
-              <div className="display text-[21px]">{prompt}</div>
-              {hint && <div className="mono text-[11px] text-muted mt-1.5 uppercase tracking-wider">{hint}</div>}
-            </>
-          )}
-          {phase === "preparing" && <div className="flex justify-center"><Spinner label={status} /></div>}
-          {phase === "passed" && (
-            <div className="display text-[21px] text-beam">Verified</div>
-          )}
-          {phase === "idle" && (
-            <div className="text-[14px] text-muted leading-relaxed max-w-sm mx-auto">
-              You will be asked to turn your head in an order chosen right now.
-              It changes every time, so a recording cannot pass it.
+            <div className="verify-readout" aria-live="polite">
+              {phase === "running" ? (
+                <>
+                  <strong className="display">{prompt}</strong>
+                  {hint ? <span className="mono">{hint}</span> : null}
+                </>
+              ) : null}
+              {phase === "preparing" ? <Spinner label={status} /> : null}
+              {phase === "passed" ? <strong className="display verify-cleared">Verified and cleared</strong> : null}
+              {phase === "idle" ? (
+                <>
+                  <strong className="display">Ready for a live reading</strong>
+                  <p>A head-turn order is drawn now and changes on every attempt, so a recording cannot prepare for it.</p>
+                </>
+              ) : null}
+              {phase === "refused" ? <strong className="display verify-refused">Reading refused</strong> : null}
             </div>
-          )}
-        </div>
 
-        <div className="mt-5 flex gap-3 justify-center">
-          {(phase === "idle" || phase === "refused") && (
-            <>
-              <button className="btn btn-primary" onClick={begin}>
-                {phase === "refused" ? "Try again" : mode === "in" ? "Start sign in" : "Start sign out"}
-              </button>
-              {onCancel && <button className="btn btn-ghost" onClick={() => { stopCamera(); onCancel(); }}>Cancel</button>}
-            </>
-          )}
-          {(phase === "running" || phase === "preparing") && (
-            <button className="btn btn-ghost" onClick={() => { abort.current = true; stopCamera(); setPhase("idle"); setGates({ location: "pending", live: "pending", device: "pending", identity: "pending" }); }}>
-              Stop
-            </button>
-          )}
+            <div className="verify-controls">
+              {phase === "idle" || phase === "refused" ? (
+                <>
+                  <button type="button" className="btn btn-primary" onClick={begin}>
+                    {phase === "refused" ? "Try again" : mode === "in" ? "Start sign in" : "Start sign out"}
+                  </button>
+                  {onCancel ? <button type="button" className="btn btn-ghost" onClick={() => { stopCamera(); onCancel(); }}>Cancel</button> : null}
+                </>
+              ) : null}
+              {phase === "running" || phase === "preparing" ? (
+                <button type="button" className="btn btn-ghost" onClick={() => { abort.current = true; stopCamera(); setPhase("idle"); setGates({ location: "pending", live: "pending", device: "pending", identity: "pending" }); }}>
+                  Stop verification
+                </button>
+              ) : null}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -395,7 +425,7 @@ export default function VerifyFlow({ mode = "in", onVerified, onCancel }) {
       )}
 
       {geoInfo && gates.location === "clear" && phase !== "refused" && (
-        <div className="mono text-[11px] text-muted text-center">
+        <div className="mono verify-geo-readout">
           {formatDistance(checkPerimeter(geoInfo, settings).distance)} from the site centre ·
           accurate to {Math.round(geoInfo.accuracy)}m
         </div>
