@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Shell, Spinner, Empty, Pill, Notice } from "../../components/UI";
 import {
   decideReportAccess,
@@ -116,7 +116,7 @@ export default function Reports() {
   const perPerson = evidence?.people || [];
   const scopeName = evidence?.scope?.label || (scope === "board" ? "The Board as a whole" : access?.departmentName || "Selected scope");
 
-  const instrumentReading = useMemo(() => {
+  const instrumentReading = (() => {
     if (!evidence) return "";
     const parts = [
       `${summary.headcount} active ${summary.headcount === 1 ? "person" : "people"} across ${summary.expectedWorkingDays} expected weekdays produced ${summary.attendedDays} recorded attendance ${summary.attendedDays === 1 ? "day" : "days"}.`,
@@ -126,7 +126,7 @@ export default function Reports() {
     if (summary.incompleteSignOuts) parts.push(`${summary.incompleteSignOuts} incomplete sign-outs leave their working hours uncounted.`);
     if (summary.manualEntries) parts.push(`${summary.manualEntries} entries were placed manually and remain identifiable in the audit trail.`);
     return parts.join(" ");
-  }, [evidence, summary]);
+  })();
 
   async function createBrief() {
     setGenerating(true); setBriefError(""); setCopied(false);

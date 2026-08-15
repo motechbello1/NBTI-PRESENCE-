@@ -8,7 +8,10 @@
  * frame.
  */
 
-import * as faceapi from "@vladmandic/face-api";
+// Use the package's non-bundled build so face recognition and the spoof
+// detector share one TensorFlow runtime. Loading the default build beside
+// coco-ssd registers every WebGL kernel twice and slows camera start-up.
+import * as faceapi from "@vladmandic/face-api/dist/face-api.esm-nobundle.js";
 
 const MODEL_URL = "/models";
 let ready = false;
@@ -19,13 +22,18 @@ export async function loadFaceModels(onProgress = () => {}) {
   if (loading) return loading;
 
   loading = (async () => {
-    onProgress("Loading face detector");
-    await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-    onProgress("Loading landmark map");
-    await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
-    onProgress("Loading recognition model");
-    await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
-    ready = true;
+    try {
+      onProgress("Loading face detector");
+      await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+      onProgress("Loading landmark map");
+      await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+      onProgress("Loading recognition model");
+      await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+      ready = true;
+    } catch (error) {
+      loading = null;
+      throw error;
+    }
   })();
 
   return loading;
@@ -33,12 +41,20 @@ export async function loadFaceModels(onProgress = () => {}) {
 
 export const modelsReady = () => ready;
 
-const DETECTOR = new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 });
+const DESKTOP_DETECTOR = new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.46 });
+const MOBILE_DETECTOR = new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.42 });
+
+function detectorForDevice() {
+  const narrow = typeof window !== "undefined" && window.innerWidth <= 720;
+  const modestCpu = typeof navigator !== "undefined" && navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4;
+  return narrow || modestCpu ? MOBILE_DETECTOR : DESKTOP_DETECTOR;
+}
 
 /** Every face currently visible, with landmarks and descriptors. */
 export async function readFaces(videoEl) {
+  if (!hasReadableVideoFrame(videoEl)) return [];
   return faceapi
-    .detectAllFaces(videoEl, DETECTOR)
+    .detectAllFaces(videoEl, detectorForDevice())
     .withFaceLandmarks()
     .withFaceDescriptors();
 }
@@ -181,8 +197,52 @@ export function bestMatch(liveDescriptor, enrolments) {
   return best;
 }
 
+/** True only while a mounted video element has a real camera frame. */
+export function hasReadableVideoFrame(videoEl) {
+  return Boolean(
+    videoEl &&
+    videoEl.readyState >= 2 &&
+    videoEl.videoWidth > 0 &&
+    videoEl.videoHeight > 0
+  );
+}
+
+/** Waits for camera metadata and the first drawable frame. */
+export function waitForVideoFrame(videoEl, timeoutMs = 3500) {
+  if (hasReadableVideoFrame(videoEl)) return Promise.resolve(videoEl);
+
+  return new Promise((resolve, reject) => {
+    if (!videoEl) {
+      reject(new Error("The camera view is no longer available."));
+      return;
+    }
+
+    let timeout;
+    const finish = () => {
+      if (!hasReadableVideoFrame(videoEl)) return;
+      clearTimeout(timeout);
+      videoEl.removeEventListener("loadeddata", finish);
+      videoEl.removeEventListener("playing", finish);
+      resolve(videoEl);
+    };
+    const fail = () => {
+      videoEl.removeEventListener("loadeddata", finish);
+      videoEl.removeEventListener("playing", finish);
+      reject(new Error("The camera opened but did not produce a readable frame."));
+    };
+
+    videoEl.addEventListener("loadeddata", finish);
+    videoEl.addEventListener("playing", finish);
+    timeout = setTimeout(fail, timeoutMs);
+    finish();
+  });
+}
+
 /** Copies the current video frame to a canvas at native resolution. */
 export function grabFrame(videoEl, canvas) {
+  if (!hasReadableVideoFrame(videoEl)) {
+    throw new Error("A readable camera frame is not available.");
+  }
   canvas.width = videoEl.videoWidth;
   canvas.height = videoEl.videoHeight;
   canvas.getContext("2d").drawImage(videoEl, 0, 0, canvas.width, canvas.height);

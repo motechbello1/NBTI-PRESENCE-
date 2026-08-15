@@ -11,7 +11,7 @@ const ADMIN_LINKS = [
   ["/admin", "Overview"],
   ["/admin/register", "Register"],
   ["/admin/staff", "Staff"],
-  ["/admin/flags", "Incidents"],
+  ["/admin/flags", "Suspicious attempts"],
   ["/reports", "Reports"],
   ["/admin/settings", "Settings"],
 ];

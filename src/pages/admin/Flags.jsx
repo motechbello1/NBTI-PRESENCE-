@@ -103,8 +103,8 @@ export default function Flags() {
       <section className="incident-command-page" aria-labelledby="incident-command-title">
         <header className="incident-command-head">
           <div>
-            <div className="eyebrow">Evidence and intervention · sector 03</div>
-            <h1 id="incident-command-title" className="display">Incident intelligence</h1>
+            <div className="eyebrow">Evidence and intervention · suspicious-attempt sheet</div>
+            <h1 id="incident-command-title" className="display">Suspicious attendance attempts</h1>
             <p>Every refused or suspicious attendance attempt is held here with its time, device reading, location and captured frame.</p>
           </div>
           <aside className="incident-command-alert">
@@ -187,7 +187,11 @@ function IncidentDossier({ flag, evidence, note, saving, onNote, onClose, onReso
               : evidence.state === "loading" ? <Spinner label="Loading protected frame" />
               : <div><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M8 13h32v25H8zM15 13l3-5h12l3 5M14 31l7-7 6 6 4-4 5 5" /></svg><strong>{evidence.state === "error" ? "Protected frame unavailable" : "No frame was captured"}</strong><span>The incident record and instrument readings remain available.</span></div>}
           </div>
-          <div className="incident-evidence-status mono"><i />{flag.evidence_path ? "EVIDENCE OBJECT · SIGNED ACCESS · 10 MINUTES" : "NO STORAGE OBJECT ATTACHED"}</div>
+          <div className="incident-evidence-status mono">
+            <i />
+            {flag.evidence_path ? "EVIDENCE OBJECT · SIGNED ACCESS · 10 MINUTES" : "NO STORAGE OBJECT ATTACHED"}
+            {evidence.state === "ready" ? <a href={evidence.url} target="_blank" rel="noreferrer">OPEN PROTECTED IMAGE ↗</a> : null}
+          </div>
         </div>
 
         <div className="incident-analysis-panel">

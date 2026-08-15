@@ -1,4 +1,5 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Component } from "react";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import { SplashScreen } from "./components/UI";
 
@@ -34,11 +35,46 @@ function RequireAdmin({ children }) {
   return children;
 }
 
+class RouteErrorBoundary extends Component {
+  state = { error: null };
+
+  static getDerivedStateFromError(error) {
+    return { error };
+  }
+
+  componentDidCatch(error, info) {
+    console.error("Page rendering failed:", error, info);
+  }
+
+  componentDidUpdate(previousProps) {
+    if (this.state.error && previousProps.resetKey !== this.props.resetKey) {
+      this.setState({ error: null });
+    }
+  }
+
+  render() {
+    if (!this.state.error) return this.props.children;
+    return (
+      <main className="route-failure" role="alert">
+        <span className="mono">PAGE RECOVERY</span>
+        <h1 className="display">This page could not finish loading.</h1>
+        <p>The rest of your attendance account is still available. Return to Attendance, or reload this page and try again.</p>
+        <div>
+          <a className="btn btn-primary" href="/">Return to attendance</a>
+          <button className="btn btn-ghost" type="button" onClick={() => window.location.reload()}>Reload page</button>
+        </div>
+      </main>
+    );
+  }
+}
+
 export default function App() {
   const { session, loading } = useAuth();
+  const location = useLocation();
 
   return (
-    <Routes>
+    <RouteErrorBoundary resetKey={location.key}>
+    <Routes location={location}>
       <Route path="/sign-in" element={
         loading ? <Booting /> : session ? <Navigate to="/" replace /> : <Login />
       } />
@@ -60,5 +96,6 @@ export default function App() {
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </RouteErrorBoundary>
   );
 }

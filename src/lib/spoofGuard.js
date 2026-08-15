@@ -44,10 +44,15 @@ export async function loadSpoofModels(onProgress = () => {}) {
   if (detectorLoading) return detectorLoading;
 
   detectorLoading = (async () => {
-    onProgress("Loading device detector");
-    await tf.ready();
-    detector = await cocoSsd.load({ base: "lite_mobilenet_v2" });
-    return detector;
+    try {
+      onProgress("Loading device detector");
+      await tf.ready();
+      detector = await cocoSsd.load({ base: "lite_mobilenet_v2" });
+      return detector;
+    } catch (error) {
+      detectorLoading = null;
+      throw error;
+    }
   })();
 
   return detectorLoading;

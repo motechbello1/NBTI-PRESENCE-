@@ -269,6 +269,7 @@ export async function raiseFlag({
   detail = {}, fingerprint = null, lat = null, lng = null, evidenceBlob = null,
 }) {
   let evidencePath = null;
+  let evidenceUploadError = null;
 
   if (evidenceBlob) {
     // The storage policy requires the first folder to be the uploader's own id,
@@ -279,6 +280,7 @@ export async function raiseFlag({
     const { error: upErr } = await supabase.storage
       .from("evidence").upload(path, evidenceBlob, { contentType: "image/jpeg", upsert: false });
     if (!upErr) evidencePath = path;
+    else evidenceUploadError = upErr.message;
   }
 
   const { data, error } = await supabase.from("security_flags").insert({
@@ -287,13 +289,13 @@ export async function raiseFlag({
     flag_type: flagType,
     severity,
     evidence_path: evidencePath,
-    detail,
+    detail: evidenceUploadError ? { ...detail, evidence_upload_error: evidenceUploadError } : detail,
     device_fingerprint: fingerprint,
     lat, lng,
     user_agent: navigator.userAgent,
   }).select().single();
 
-  if (error) console.error("Flag could not be written:", error);
+  if (error) throw error;
   return data;
 }
 

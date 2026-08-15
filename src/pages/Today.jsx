@@ -5,6 +5,7 @@ import { Shell, Notice, Pill, StatusPill, Spinner, AuthorityBadge } from "../com
 const VerifyFlow = lazy(() => import("../components/VerifyFlow"));
 import { getTodayRecord, signIn, signOut } from "../lib/db";
 import { decideAbsence, getReportCapabilities, requestAbsence } from "../lib/intelligence";
+import { warmVerificationWhenIdle } from "../lib/verificationWarmup";
 
 const timeOf = (iso) =>
   iso ? new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : "—";
@@ -29,6 +30,8 @@ export default function Today() {
   useEffect(() => {
     load();
     loadCapabilities();
+    const cancelWarmup = warmVerificationWhenIdle();
+    return cancelWarmup;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

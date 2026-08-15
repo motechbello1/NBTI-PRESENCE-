@@ -75,7 +75,7 @@ export function drawSequence() {
 
 const BLINK_CLOSED = 0.19;
 const BLINK_OPEN = 0.25;
-const HOLD_FRAMES = 4;      // frames a pose must persist to count
+const HOLD_FRAMES = 3;      // three consecutive readings balance speed and stability
 const STEP_TIMEOUT_MS = 9000;
 
 /**

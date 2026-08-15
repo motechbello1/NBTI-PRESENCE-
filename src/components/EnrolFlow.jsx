@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useAuth } from "../context/AuthContext";
 import { Notice, Spinner } from "./UI";
-import { loadFaceModels, readPrimaryFace, sharpnessOf, grabFrame } from "../lib/faceEngine";
+import {
+  loadFaceModels, readPrimaryFace, sharpnessOf, grabFrame,
+  hasReadableVideoFrame, waitForVideoFrame,
+} from "../lib/faceEngine";
 import { loadSpoofModels, scanFrameObjects } from "../lib/spoofGuard";
 import { measure, ACTIONS } from "../lib/liveness";
 import { saveEnrolment } from "../lib/db";
@@ -34,7 +37,7 @@ function EnrolCue({ direction }) {
   return <div className={`enrol-cue is-${direction}`} aria-hidden="true"><svg viewBox="0 0 32 32"><path d={paths[direction]} /></svg></div>;
 }
 
-export default function EnrolFlow({ onDone, onCancel }) {
+export default function EnrolFlow({ onDone, onCancel, autoStart = true }) {
   const { session, refresh } = useAuth();
   const videoRef = useRef(null);
   const workRef = useRef(document.createElement("canvas"));
@@ -44,6 +47,8 @@ export default function EnrolFlow({ onDone, onCancel }) {
   const held = useRef(0);
   const abort = useRef(false);
   const lastScan = useRef(0);
+  const scanBusy = useRef(false);
+  const autoStarted = useRef(false);
   const framingRef = useRef({ missed: 0, aligned: 0 });
 
   const [phase, setPhase] = useState("idle");  // idle | preparing | running | saving | done | error
@@ -66,7 +71,8 @@ export default function EnrolFlow({ onDone, onCancel }) {
   }, []);
 
   const stop = useCallback(() => {
-    cancelAnimationFrame(loopRef.current);
+    if (loopRef.current !== null) cancelAnimationFrame(loopRef.current);
+    loopRef.current = null;
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
   }, []);
@@ -79,6 +85,7 @@ export default function EnrolFlow({ onDone, onCancel }) {
     captured.current = [];
     held.current = 0;
     framingRef.current = { missed: 0, aligned: 0 };
+    scanBusy.current = false;
     setStep(0);
     setPhase("preparing");
     setFraming({ state: "preparing", instruction: "Opening the front camera", detail: "Keep this screen open" });
@@ -87,15 +94,21 @@ export default function EnrolFlow({ onDone, onCancel }) {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: "user",
-          width: { ideal: 960 },
-          height: { ideal: 1280 },
+          width: { ideal: 720 },
+          height: { ideal: 960 },
           aspectRatio: { ideal: 0.75 },
         },
         audio: false,
       });
       streamRef.current = stream;
-      videoRef.current.srcObject = stream;
-      await videoRef.current.play();
+      const video = videoRef.current;
+      if (!video || abort.current) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
+      video.srcObject = stream;
+      await video.play();
+      await waitForVideoFrame(video);
     } catch {
       setPhase("error");
       setError("The camera could not be opened. Allow camera access in your browser settings and try again.");
@@ -107,7 +120,8 @@ export default function EnrolFlow({ onDone, onCancel }) {
       loadFaceModels((s) => setStatus(s)),
       loadSpoofModels((s) => setStatus(s)),
     ]);
-    if (abort.current) return;
+    const video = videoRef.current;
+    if (abort.current || !hasReadableVideoFrame(video)) return;
 
     setPhase("running");
     setFraming({
@@ -117,19 +131,28 @@ export default function EnrolFlow({ onDone, onCancel }) {
     });
 
     const tick = async () => {
-      if (abort.current || !videoRef.current) return;
+      const activeVideo = videoRef.current;
+      if (abort.current || !hasReadableVideoFrame(activeVideo)) return;
 
-      const { face, count } = await readPrimaryFace(videoRef.current).catch(() => ({ face: null, count: 0 }));
+      const { face, count } = await readPrimaryFace(activeVideo).catch(() => ({ face: null, count: 0 }));
+      if (abort.current || videoRef.current !== activeVideo) return;
 
-      if (Date.now() - lastScan.current > 900) {
+      if (!scanBusy.current && Date.now() - lastScan.current > 1400) {
         lastScan.current = Date.now();
-        const c = grabFrame(videoRef.current, workRef.current);
-        const found = await scanFrameObjects(c).catch(() => null);
-        if (found?.devices.length) {
-          stop();
-          setPhase("error");
-          setError(`The camera can see ${found.devices[0].label}. Enrolment must be done with your own face, in person. Put it away and start again.`);
-          return;
+        scanBusy.current = true;
+        try {
+          const scanCanvas = grabFrame(activeVideo, document.createElement("canvas"));
+          void scanFrameObjects(scanCanvas)
+            .then((found) => {
+              if (abort.current || !found?.devices.length) return;
+              abort.current = true;
+              stop();
+              setPhase("error");
+              setError(`The camera can see ${found.devices[0].label}. Enrolment must be done with your own face, in person. Put it away and start again.`);
+            })
+            .finally(() => { scanBusy.current = false; });
+        } catch {
+          scanBusy.current = false;
         }
       }
 
@@ -141,7 +164,7 @@ export default function EnrolFlow({ onDone, onCancel }) {
         return;
       }
 
-      const frameReading = readCameraFraming(face, videoRef.current);
+      const frameReading = readCameraFraming(face, activeVideo);
 
       if (!face) {
         framingRef.current.missed += 1;
@@ -166,7 +189,7 @@ export default function EnrolFlow({ onDone, onCancel }) {
       }
 
       framingRef.current.aligned += 1;
-      if (framingRef.current.aligned < 4) {
+      if (framingRef.current.aligned < 3) {
         held.current = 0;
         if (framingRef.current.aligned >= 2) {
           setStatus("Hold the phone still while the camera locks on");
@@ -183,8 +206,9 @@ export default function EnrolFlow({ onDone, onCancel }) {
         held.current++;
         setStatus(`Hold it`);
         updateFraming({ state: "challenge", instruction: pose.prompt, detail: "Good position. Hold still for the reading" });
-        if (held.current >= 6) {
-          const canvas = grabFrame(videoRef.current, workRef.current);
+        if (held.current >= 4) {
+          if (abort.current || videoRef.current !== activeVideo) return;
+          const canvas = grabFrame(activeVideo, workRef.current);
           const quality = sharpnessOf(canvas, face.detection.box);
 
           if (quality < 40) {
@@ -200,6 +224,7 @@ export default function EnrolFlow({ onDone, onCancel }) {
           setStep(captured.current.length);
 
           if (captured.current.length >= POSES.length) {
+            abort.current = true;
             stop();
             setPhase("saving");
             try {
@@ -227,6 +252,12 @@ export default function EnrolFlow({ onDone, onCancel }) {
     loopRef.current = requestAnimationFrame(tick);
   }, [session, refresh, stop, onDone, updateFraming]);
 
+  useEffect(() => {
+    if (!autoStart || autoStarted.current) return;
+    autoStarted.current = true;
+    void begin();
+  }, [autoStart, begin]);
+
   const pose = POSES[Math.min(step, POSES.length - 1)];
 
   return (
@@ -250,6 +281,7 @@ export default function EnrolFlow({ onDone, onCancel }) {
         <div className="enrol-camera">
           <div className="scan-frame" data-framing={framing.state}>
             <video ref={videoRef} playsInline muted autoPlay aria-label="Live camera view for face enrolment" />
+            <div className="camera-sightline" aria-hidden="true"><i /><span>LOOK TOWARD YOUR CAMERA</span></div>
             {phase === "running" ? <EnrolCue direction={pose.cue} /> : null}
             <div className="face-guide" aria-hidden="true"><i className="face-guide-eye-line" /><i className="face-guide-chin" /></div>
             {phase !== "idle" ? <div className="scan-guidance" aria-hidden="true"><span className="mono">{framing.state === "challenge" ? `POSITION ${Math.min(step + 1, 4)} OF 4` : "FACE POSITION"}</span><strong>{framing.instruction}</strong><small>{framing.detail}</small></div> : null}

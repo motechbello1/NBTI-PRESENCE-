@@ -1,9 +1,10 @@
-import { useState, lazy, Suspense } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { useAuth } from "../context/AuthContext";
 import { Shell, Notice, Pill, Spinner } from "../components/UI";
 const EnrolFlow = lazy(() => import("../components/EnrolFlow"));
 import { clearEnrolment, updateProfile } from "../lib/db";
 import { deviceLabel } from "../lib/device";
+import { warmVerificationWhenIdle } from "../lib/verificationWarmup";
 
 export default function Profile() {
   const { session, profile, refresh } = useAuth();
@@ -12,6 +13,8 @@ export default function Profile() {
   const [form, setForm] = useState({ phone: profile?.phone || "" });
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => warmVerificationWhenIdle(), []);
 
   async function save(event) {
     event.preventDefault();
