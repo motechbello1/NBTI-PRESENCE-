@@ -18,12 +18,21 @@ const iso = (date) => date.toISOString().slice(0, 10);
 const today = iso(new Date());
 
 function useReducedMotion() {
-  const [reduced, setReduced] = useState(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  const [reduced, setReduced] = useState(() => (
+    typeof window !== "undefined" && typeof window.matchMedia === "function"
+      ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      : false
+  ));
   useEffect(() => {
+    if (typeof window.matchMedia !== "function") return undefined;
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
     const change = () => setReduced(media.matches);
-    media.addEventListener("change", change);
-    return () => media.removeEventListener("change", change);
+    if (typeof media.addEventListener === "function") {
+      media.addEventListener("change", change);
+      return () => media.removeEventListener("change", change);
+    }
+    media.addListener(change);
+    return () => media.removeListener(change);
   }, []);
   return reduced;
 }

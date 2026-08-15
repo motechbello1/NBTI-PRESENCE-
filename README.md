@@ -50,12 +50,12 @@ storage bucket.
 In **Authentication → Providers → Email**, turn off "Confirm email" while you
 are testing so accounts work immediately.
 
-Copy your project URL and anon key from **Settings → API**.
+Copy your project URL and publishable key from **Settings → API Keys**.
 
 ### 2. Local
 
 ```bash
-cp .env.example .env      # paste your URL and anon key into it
+cp .env.example .env      # paste your URL and publishable key into it
 npm install
 npm run dev
 ```
@@ -133,8 +133,9 @@ Push to GitHub, then import the repository at vercel.com.
 
 Add both environment variables under **Settings → Environment Variables**:
 
+```text
 VITE_SUPABASE_URL
-VITE_SUPABASE_ANON_KEY
+VITE_SUPABASE_PUBLISHABLE_KEY
 ```
 
 Deploy. `vercel.json` already routes every path back to `index.html`, so

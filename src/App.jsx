@@ -1,4 +1,4 @@
-import { Component } from "react";
+import { Component, lazy, Suspense } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import { SplashScreen } from "./components/UI";
@@ -13,8 +13,9 @@ import Overview from "./pages/admin/Overview";
 import DailyRegister from "./pages/admin/DailyRegister";
 import StaffAdmin from "./pages/admin/StaffAdmin";
 import Flags from "./pages/admin/Flags";
-import Reports from "./pages/admin/Reports";
 import Settings from "./pages/admin/Settings";
+
+const Reports = lazy(() => import("./pages/admin/Reports"));
 
 function Booting() {
   return <SplashScreen />;
@@ -46,12 +47,6 @@ class RouteErrorBoundary extends Component {
     console.error("Page rendering failed:", error, info);
   }
 
-  componentDidUpdate(previousProps) {
-    if (this.state.error && previousProps.resetKey !== this.props.resetKey) {
-      this.setState({ error: null });
-    }
-  }
-
   render() {
     if (!this.state.error) return this.props.children;
     return (
@@ -73,7 +68,7 @@ export default function App() {
   const location = useLocation();
 
   return (
-    <RouteErrorBoundary resetKey={location.key}>
+    <RouteErrorBoundary key={location.key}>
     <Routes location={location}>
       <Route path="/sign-in" element={
         loading ? <Booting /> : session ? <Navigate to="/" replace /> : <Login />
@@ -84,7 +79,7 @@ export default function App() {
 
       <Route path="/" element={<RequireAuth><Today /></RequireAuth>} />
       <Route path="/history" element={<RequireAuth><History /></RequireAuth>} />
-      <Route path="/reports" element={<RequireAuth><Reports /></RequireAuth>} />
+      <Route path="/reports" element={<RequireAuth><Suspense fallback={<Booting />}><Reports /></Suspense></RequireAuth>} />
       <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
 
       <Route path="/admin" element={<RequireAdmin><Overview /></RequireAdmin>} />

@@ -536,6 +536,10 @@ export default function VerifyFlow({ mode = "in", onVerified, onCancel, autoStar
           <GateStrip states={gates} />
 
           <div className="verify-chamber">
+            <div className="verify-camera-placement">
+              <span className="mono">YOUR CAMERA PLACEMENT</span>
+              <small>Keep the camera upright, at eye level, with your face centred in the guide.</small>
+            </div>
             <div className="scan-frame" data-framing={framing.state}>
               <video ref={videoRef} playsInline muted autoPlay aria-label="Live camera view for attendance verification" />
               <div className="camera-sightline" aria-hidden="true"><i /><span>LOOK TOWARD YOUR CAMERA</span></div>
