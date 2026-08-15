@@ -1,7 +1,10 @@
 {
   "outputDirectory": "dist",
   "functions": {
-    "api/presence-intelligence.js": { "maxDuration": 60 }
+    "api/presence-intelligence.js": {
+      "maxDuration": 60,
+      "includeFiles": "supabase/functions/presence-intelligence/knowledge.ts"
+    }
   },
   "routes": [
     { "handle": "filesystem" },
