@@ -279,9 +279,13 @@ export default function EnrolFlow({ onDone, onCancel, autoStart = true }) {
         </div>
 
         <div className="enrol-camera">
+          <div className="enrol-camera-placement">
+            <span className="mono">CAMERA CENTRELINE</span>
+            <small>Place your face in the guide, then keep your eyes on the camera lens directly above it.</small>
+          </div>
           <div className="scan-frame" data-framing={framing.state}>
             <video ref={videoRef} playsInline muted autoPlay aria-label="Live camera view for face enrolment" />
-            <div className="camera-sightline" aria-hidden="true"><i /><span>LOOK TOWARD YOUR CAMERA</span></div>
+            <div className="camera-sightline" aria-hidden="true"><i /><span>CAMERA LENS ABOVE</span><i /></div>
             {phase === "running" ? <EnrolCue direction={pose.cue} /> : null}
             <div className="face-guide" aria-hidden="true"><i className="face-guide-eye-line" /><i className="face-guide-chin" /></div>
             {phase !== "idle" ? <div className="scan-guidance" aria-hidden="true"><span className="mono">{framing.state === "challenge" ? `POSITION ${Math.min(step + 1, 4)} OF 4` : "FACE POSITION"}</span><strong>{framing.instruction}</strong><small>{framing.detail}</small></div> : null}

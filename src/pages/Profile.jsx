@@ -37,7 +37,7 @@ export default function Profile() {
 
   return (
     <Shell>
-      <section className="profile-page" aria-labelledby="profile-title">
+      <section className={`profile-page${enrolling ? " is-camera-active" : ""}`} aria-labelledby="profile-title">
         <header className="profile-head">
           <div>
             <div className="eyebrow">Personnel record · staff copy</div>

@@ -3095,12 +3095,69 @@ body {
   left: 14px;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
   color: color-mix(in srgb, var(--ledger) 74%, transparent);
   pointer-events: none;
 }
-.camera-sightline i { flex: 1; height: 1px; background: currentColor; }
-.camera-sightline span { font-family: "IBM Plex Mono", monospace; font-size: 7px; letter-spacing: 0.12em; }
+.camera-sightline i { width: clamp(28px, 13%, 62px); height: 1px; background: currentColor; }
+.camera-sightline span { font-family: "IBM Plex Mono", monospace; font-size: 7px; letter-spacing: 0.12em; text-align: center; white-space: nowrap; }
+
+/* Keep every live camera target on the physical screen centreline. The
+   desktop navigation rail occupies 238px, so content-centred cameras need
+   half that width removed. Once the rail collapses, no correction is needed. */
+.profile-layout {
+  grid-template-columns: minmax(0, 1fr);
+}
+.profile-verification {
+  grid-row: 1;
+  width: min(100%, 720px);
+  display: block;
+  justify-self: center;
+}
+.profile-personnel {
+  grid-row: 2;
+  width: min(100%, 860px);
+  justify-self: center;
+}
+.profile-verification .profile-device { margin-top: 22px; }
+
+.profile-page.is-camera-active .profile-head,
+.profile-page.is-camera-active .profile-personnel,
+.profile-page.is-camera-active .profile-device,
+.today-page.is-camera-active .today-head,
+.today-page.is-camera-active .today-record {
+  display: none;
+}
+.profile-page.is-camera-active .profile-layout,
+.today-page.is-camera-active .today-layout {
+  grid-template-columns: minmax(0, 1fr);
+  margin-top: 0;
+  padding-top: 0;
+}
+.today-page.is-camera-active .today-action {
+  width: min(100%, 860px);
+  justify-self: center;
+}
+
+.enrol-camera { grid-template-columns: minmax(0, 1fr); justify-items: center; }
+.enrol-camera-placement {
+  width: min(100%, 420px);
+  display: grid;
+  gap: 6px;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid color-mix(in srgb, var(--rule) 28%, transparent);
+}
+.enrol-camera-placement span { color: var(--ledger); font-size: 9px; letter-spacing: 0.12em; }
+.enrol-camera-placement small { color: var(--rule); font-size: 10px; line-height: 1.45; }
+
+@media (min-width: 1024px) {
+  .profile-verification,
+  .today-page.is-camera-active .today-action {
+    transform: translateX(-119px);
+  }
+}
 
 @media (max-width: 520px) {
   .configuration-failure,

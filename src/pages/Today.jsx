@@ -90,7 +90,7 @@ export default function Today() {
 
   return (
     <Shell>
-      <section className="today-page">
+      <section className={`today-page${mode ? " is-camera-active" : ""}`}>
         <header className="today-head">
           <div>
             <div className="eyebrow">{now.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</div>
