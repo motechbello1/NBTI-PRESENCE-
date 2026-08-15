@@ -1,4 +1,5 @@
 {
+  "outputDirectory": "dist",
   "functions": {
     "api/presence-intelligence.js": { "maxDuration": 60 }
   },
