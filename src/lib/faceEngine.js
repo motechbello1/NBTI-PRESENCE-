@@ -13,7 +13,11 @@
 // coco-ssd registers every WebGL kernel twice and slows camera start-up.
 import * as faceapi from "@vladmandic/face-api/dist/face-api.esm-nobundle.js";
 
-const MODEL_URL = "/models";
+// These are generic open-source face-api weights, never staff imagery or
+// attendance data. Pinning them to an immutable CDN-backed Git commit keeps
+// the Vercel release small and makes repeat camera starts cacheable globally.
+const MODEL_URL = import.meta.env.VITE_FACE_MODEL_URL
+  || "https://cdn.jsdelivr.net/gh/motechbello1/NBTI-PRESENCE-@2eae5a576ea1ae161c88e538b9c5a2e8199ab968/public/models";
 let ready = false;
 let loading = null;
 
