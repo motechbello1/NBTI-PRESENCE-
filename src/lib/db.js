@@ -192,12 +192,21 @@ export async function signOut(userId, payload, settings) {
   return data;
 }
 
-export async function myHistory(userId, days = 60) {
-  const from = new Date(Date.now() - days * 86400000).toISOString().slice(0, 10);
-  const { data, error } = await supabase
+export async function myHistory(userId, range = 60) {
+  const legacyFrom = typeof range === "number"
+    ? new Date(Date.now() - range * 86400000).toISOString().slice(0, 10)
+    : null;
+  const from = legacyFrom || range?.from;
+  const to = typeof range === "object" ? range?.to : null;
+
+  let query = supabase
     .from("attendance").select("*")
-    .eq("user_id", userId).gte("work_date", from)
+    .eq("user_id", userId)
     .order("work_date", { ascending: false });
+  if (from) query = query.gte("work_date", from);
+  if (to) query = query.lte("work_date", to);
+
+  const { data, error } = await query;
   if (error) throw error;
   return data;
 }

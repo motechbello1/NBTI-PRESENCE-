@@ -53,6 +53,7 @@ export default function Today() {
       setReason("");
     } catch (e) {
       setError(e.message);
+      throw e;
     }
   }
 
@@ -80,9 +81,9 @@ export default function Today() {
     );
   }
 
-  const pageTitle = record?.sign_out_at ? "Attendance complete" : record?.sign_in_at ? "You are signed in" : "Attendance not recorded";
+  const pageTitle = record?.sign_out_at ? "Today’s attendance is complete" : record?.sign_in_at ? "You are signed in" : "Sign in for attendance";
   const pageState = record?.sign_out_at ? "Closed" : record?.sign_in_at ? "On site" : "Action required";
-  const actionTitle = record?.sign_out_at ? "Today’s register is complete" : record?.sign_in_at ? "Record your departure" : "Record your arrival";
+  const actionTitle = record?.sign_out_at ? "Today’s register is complete" : record?.sign_in_at ? "Sign out before you leave" : "Sign in to start your workday";
 
   return (
     <Shell>
@@ -95,9 +96,27 @@ export default function Today() {
           <div className="today-head-actions">
             <AuthorityBadge profile={profile} />
             <span className={`today-state ${record?.sign_in_at ? "is-clear" : "is-hold"}`}><i aria-hidden="true" />{pageState}</span>
+            <Link to="/history" className="btn btn-ghost">My attendance records</Link>
             {isAdmin ? <Link to="/admin" className="btn btn-ghost">Administration</Link> : null}
           </div>
         </header>
+
+        {!mode ? (
+          <section className={`today-quick-action${record?.sign_out_at ? " is-complete" : ""}`} aria-label="Today's attendance action">
+            <div>
+              <span className="mono">TODAY’S ATTENDANCE</span>
+              <strong>{!record?.sign_in_at ? "You have not signed in" : !record?.sign_out_at ? `Signed in at ${timeOf(record.sign_in_at)}` : `${timeOf(record.sign_in_at)} to ${timeOf(record.sign_out_at)}`}</strong>
+              <small>{!record?.sign_in_at ? "Use the button to open the camera and record your arrival." : !record?.sign_out_at ? "Your arrival is saved. Sign out before leaving." : `${record.hours_worked || 0} hours recorded today.`}</small>
+            </div>
+            {!record?.sign_in_at ? (
+              <button type="button" className="btn btn-primary" onClick={() => setMode("in")}>Sign in attendance</button>
+            ) : !record?.sign_out_at ? (
+              <button type="button" className="btn btn-primary" onClick={() => setMode("out")}>Sign out attendance</button>
+            ) : (
+              <Link to="/history" className="btn btn-ghost">Open attendance sheet</Link>
+            )}
+          </section>
+        ) : null}
 
         <div className="today-layout">
           <aside className="today-record" aria-label="Staff credential and today's record">
@@ -193,11 +212,11 @@ export default function Today() {
 
               <div className="today-action-footer">
                 {!record?.sign_in_at ? (
-                  <button className="btn btn-primary" onClick={() => setMode("in")}>Begin sign in</button>
+                  <button className="btn btn-primary" onClick={() => setMode("in")}>Sign in attendance</button>
                 ) : !record?.sign_out_at ? (
-                  <button className="btn btn-primary" onClick={() => setMode("out")}>Begin sign out</button>
+                  <button className="btn btn-primary" onClick={() => setMode("out")}>Sign out attendance</button>
                 ) : (
-                  <Link to="/history" className="btn btn-ghost">View attendance history</Link>
+                  <Link to="/history" className="btn btn-ghost">Open attendance sheet</Link>
                 )}
                 <span className="mono">Camera opens only during verification</span>
               </div>

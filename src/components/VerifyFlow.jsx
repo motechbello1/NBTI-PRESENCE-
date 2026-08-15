@@ -10,6 +10,7 @@ import { LivenessRun, measure } from "../lib/liveness";
 import { readPosition, checkPerimeter, formatDistance } from "../lib/geo";
 import { deviceFingerprint } from "../lib/device";
 import { getMyEnrolments, raiseFlag, sharedDeviceCount } from "../lib/db";
+import { guideLanguage, readCameraFraming } from "../lib/cameraFraming";
 
 function DirectionCue({ direction }) {
   const paths = {
@@ -44,6 +45,7 @@ export default function VerifyFlow({ mode = "in", onVerified, onCancel }) {
   const streamRef = useRef(null);
   const lastObjectScan = useRef(0);
   const objectFindings = useRef({ devices: [], people: 0 });
+  const framingRef = useRef({ missed: 0, aligned: 0 });
   const abort = useRef(false);
   // The refusal handler is created once per render, but the run reads position
   // after that. Held in a ref so a flag raised mid-challenge carries real
@@ -59,6 +61,20 @@ export default function VerifyFlow({ mode = "in", onVerified, onCancel }) {
   const [ring, setRing] = useState(0);
   const [refusal, setRefusal] = useState(null);
   const [geoInfo, setGeoInfo] = useState(null);
+  const [framing, setFraming] = useState({
+    state: "idle",
+    instruction: "Position your face inside the guide",
+    detail: "The camera will show you when it is ready",
+  });
+  const updateFraming = useCallback((next) => {
+    setFraming((current) => (
+      current.state === next.state &&
+      current.instruction === next.instruction &&
+      current.detail === next.detail
+        ? current
+        : next
+    ));
+  }, []);
 
   const setGate = (k, v) => setGates((g) => ({ ...g, [k]: v }));
 
@@ -107,6 +123,13 @@ export default function VerifyFlow({ mode = "in", onVerified, onCancel }) {
     setRefusal(null);
     setPhase("preparing");
     setGates({ location: "active", live: "pending", device: "pending", identity: "pending" });
+    setFraming({ state: "preparing", instruction: "Opening the front camera", detail: "Keep this screen open" });
+    framingRef.current = { missed: 0, aligned: 0 };
+    runRef.current = null;
+    lastObjectScan.current = 0;
+    objectFindings.current = { devices: [], people: 0 };
+    posRef.current = null;
+    setRing(0);
 
     /* GATE 1 — LOCATION ------------------------------------------------ */
     setStatus("Confirming you are on the premises");
@@ -141,7 +164,12 @@ export default function VerifyFlow({ mode = "in", onVerified, onCancel }) {
     setStatus("Starting the camera");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 640 } },
+        video: {
+          facingMode: "user",
+          width: { ideal: 960 },
+          height: { ideal: 1280 },
+          aspectRatio: { ideal: 0.75 },
+        },
         audio: false,
       });
       streamRef.current = stream;
@@ -153,8 +181,10 @@ export default function VerifyFlow({ mode = "in", onVerified, onCancel }) {
       return;
     }
 
-    await loadFaceModels((s) => setStatus(s));
-    await loadSpoofModels((s) => setStatus(s));
+    await Promise.all([
+      loadFaceModels((s) => setStatus(s)),
+      loadSpoofModels((s) => setStatus(s)),
+    ]);
     if (abort.current) return;
 
     /* Pre-flight sweep for anything held up to the camera --------------- */
@@ -174,17 +204,23 @@ export default function VerifyFlow({ mode = "in", onVerified, onCancel }) {
 
     /* GATE 3 — LIVENESS ------------------------------------------------ */
     setGate("live", "active");
-    runRef.current = new LivenessRun();
     setPhase("running");
+    setPrompt("Position your face inside the guide");
+    setHint("The timed check begins only when your face is stable");
+    setFraming({
+      state: "searching",
+      instruction: "Move closer and place your face inside the guide",
+      detail: "Keep the phone upright and look directly at the camera",
+    });
 
     const tick = async () => {
       if (abort.current || !videoRef.current) return;
-      const run = runRef.current;
 
       const { face, count } = await readPrimaryFace(videoRef.current).catch(() => ({ face: null, count: 0 }));
 
       /* A second face in frame is a proxy attempt, refuse immediately */
       if (count > 1) {
+        setFraming({ state: "blocked", instruction: "Only one person can be in view", detail: "Ask everyone else to step outside the camera frame" });
         await refuse({
           gate: "device", flagType: "multiple_faces", severity: "critical",
           message: "More than one face is in the frame. Only you can record your own attendance.",
@@ -211,12 +247,82 @@ export default function VerifyFlow({ mode = "in", onVerified, onCancel }) {
         objectFindings.current = found || objectFindings.current;
       }
 
-      const st = face ? run.feed(measure(face.landmarks)) : run.missedFrame();
+      const frameReading = readCameraFraming(face, videoRef.current);
 
-      setPrompt(face ? st.prompt : "Bring your face into the circle");
-      setHint(face ? st.hint : "");
+      if (!face) {
+        framingRef.current.missed += 1;
+        framingRef.current.aligned = 0;
+        const run = runRef.current;
+        const st = run ? run.missedFrame() : null;
+
+        // A single low-confidence detector frame should not make the whole
+        // screen jump. Once a challenge has begun it still counts as missed
+        // liveness evidence, but the visible instruction changes only after
+        // three consecutive misses.
+        if (framingRef.current.missed >= 3) {
+          updateFraming(frameReading);
+          setPrompt(frameReading.instruction);
+          setHint(frameReading.detail);
+          setCue(null);
+        }
+        if (st) setRing(st.progress + st.holdRatio / st.totalSteps);
+        if (st?.failed) {
+          setGate("live", "deny");
+          setPhase("refused");
+          setRefusal({ message: st.failed.message, retry: true });
+          stopCamera();
+          return;
+        }
+        loopRef.current = requestAnimationFrame(tick);
+        return;
+      }
+
+      framingRef.current.missed = 0;
+
+      if (!frameReading.ready) {
+        framingRef.current.aligned = 0;
+        const run = runRef.current;
+        const st = run ? run.missedFrame() : null;
+        updateFraming(frameReading);
+        setPrompt(frameReading.instruction);
+        setHint(frameReading.detail);
+        setCue(null);
+        if (st) setRing(st.progress + st.holdRatio / st.totalSteps);
+        if (st?.failed) {
+          setGate("live", "deny");
+          setPhase("refused");
+          setRefusal({ message: st.failed.message, retry: true });
+          stopCamera();
+          return;
+        }
+        loopRef.current = requestAnimationFrame(tick);
+        return;
+      }
+
+      framingRef.current.aligned += 1;
+      if (!runRef.current && framingRef.current.aligned < 4) {
+        if (framingRef.current.aligned >= 2) {
+          updateFraming({ state: "locking", instruction: "Face found", detail: "Hold the phone still while the camera locks on" });
+          setPrompt("Face found");
+          setHint("Hold still. The check is about to begin");
+        }
+        loopRef.current = requestAnimationFrame(tick);
+        return;
+      }
+
+      // The timed challenge begins only after four consecutive, centred face
+      // readings. This prevents camera start-up and positioning time from
+      // consuming the user's liveness attempt.
+      if (!runRef.current) runRef.current = new LivenessRun();
+      const run = runRef.current;
+      const st = run.feed(measure(face.landmarks));
+
+      const visibleHint = guideLanguage(st.hint);
+      setPrompt(st.prompt);
+      setHint(visibleHint);
       setCue(face ? st.cue : null);
       setRing(st.progress + st.holdRatio / st.totalSteps);
+      updateFraming({ state: "challenge", instruction: st.prompt, detail: visibleHint || "Keep your face inside the guide" });
 
       if (st.failed) {
         setGate("live", "deny");
@@ -233,6 +339,7 @@ export default function VerifyFlow({ mode = "in", onVerified, onCancel }) {
       setCue(null);
       setPrompt("Verifying");
       setStatus("Checking the image");
+      setFraming({ state: "verifying", instruction: "Checking your live reading", detail: "Keep this screen open" });
 
       const canvas = grabFrame(videoRef.current, workRef.current);
       const box = face.detection.box;
@@ -310,24 +417,32 @@ export default function VerifyFlow({ mode = "in", onVerified, onCancel }) {
 
       setPhase("passed");
       setPrompt("Verified");
+      setFraming({ state: "clear", instruction: "Attendance verified", detail: "Your reading has been accepted" });
       stopCamera();
 
-      onVerified({
-        lat: pos.lat, lng: pos.lng, accuracy: pos.accuracy,
-        distance: perimeter.distance,
-        liveness: liveScore,
-        matchDistance: Number(best.toFixed(4)),
-        fingerprint: fp,
-        sharedDevice: alsoSignedIn > 0,
-      });
+      try {
+        await onVerified({
+          lat: pos.lat, lng: pos.lng, accuracy: pos.accuracy,
+          distance: perimeter.distance,
+          liveness: liveScore,
+          matchDistance: Number(best.toFixed(4)),
+          fingerprint: fp,
+          sharedDevice: alsoSignedIn > 0,
+        });
+      } catch (saveError) {
+        setPhase("refused");
+        setRefusal({
+          title: "Attendance not saved",
+          message: saveError.message || "Your face was verified, but the attendance record could not be saved. Check your connection and try again.",
+          retry: true,
+        });
+      }
     };
 
     loopRef.current = requestAnimationFrame(tick);
-  }, [settings, session, refuse, stopCamera, onVerified]);
+  }, [settings, session, refuse, stopCamera, onVerified, updateFraming]);
 
   /* ── render ─────────────────────────────────────────── */
-  const R = 158;
-  const CIRC = 2 * Math.PI * R;
   const clearedGates = Object.values(gates).filter((state) => state === "clear").length;
   const activeFraction = phase === "running" ? Math.min(1, ring) : Object.values(gates).includes("active") ? 0.2 : 0;
   const instrumentProgress = phase === "passed" ? 1 : Math.min(1, (clearedGates + activeFraction) / 4);
@@ -347,23 +462,21 @@ export default function VerifyFlow({ mode = "in", onVerified, onCancel }) {
           <GateStrip states={gates} />
 
           <div className="verify-chamber">
-            <div className="scan-frame">
+            <div className="scan-frame" data-framing={framing.state}>
               <video ref={videoRef} playsInline muted autoPlay aria-label="Live camera view for attendance verification" />
-              {phase === "running" ? <div className="sweep" /> : null}
               {cue ? <DirectionCue direction={cue} /> : null}
-              <div className="scan-reticle" aria-hidden="true"><i /><i /><i /><i /></div>
-
-              <svg className="scan-ring" viewBox="0 0 340 340" aria-hidden="true">
-                <circle cx="170" cy="170" r={R} stroke="color-mix(in srgb, var(--ledger) 22%, transparent)" strokeWidth="3" />
-                <circle
-                  cx="170" cy="170" r={R}
-                  stroke={phase === "refused" ? "var(--deny)" : "var(--beam)"}
-                  strokeWidth="4"
-                  strokeDasharray={CIRC}
-                  strokeDashoffset={CIRC * (1 - instrumentProgress)}
-                  style={{ transition: "stroke-dashoffset 220ms linear, stroke 180ms ease" }}
-                />
-              </svg>
+              <div className="face-guide" aria-hidden="true">
+                <i className="face-guide-eye-line" />
+                <i className="face-guide-chin" />
+              </div>
+              {phase !== "idle" ? (
+                <div className="scan-guidance" aria-hidden="true">
+                  <span className="mono">{framing.state === "challenge" ? "FOLLOW THE INSTRUCTION" : "FACE POSITION"}</span>
+                  <strong>{framing.instruction}</strong>
+                  <small>{framing.detail}</small>
+                </div>
+              ) : null}
+              <div className="scan-progress" aria-hidden="true"><i style={{ width: `${Math.round(instrumentProgress * 100)}%` }} /></div>
 
               {phase === "idle" ? (
                 <div className="scan-privacy">
@@ -404,7 +517,7 @@ export default function VerifyFlow({ mode = "in", onVerified, onCancel }) {
                 </>
               ) : null}
               {phase === "running" || phase === "preparing" ? (
-                <button type="button" className="btn btn-ghost" onClick={() => { abort.current = true; stopCamera(); setPhase("idle"); setGates({ location: "pending", live: "pending", device: "pending", identity: "pending" }); }}>
+                <button type="button" className="btn btn-ghost" onClick={() => { abort.current = true; stopCamera(); runRef.current = null; framingRef.current = { missed: 0, aligned: 0 }; setFraming({ state: "idle", instruction: "Position your face inside the guide", detail: "The camera will show you when it is ready" }); setPhase("idle"); setGates({ location: "pending", live: "pending", device: "pending", identity: "pending" }); }}>
                   Stop verification
                 </button>
               ) : null}
@@ -414,7 +527,7 @@ export default function VerifyFlow({ mode = "in", onVerified, onCancel }) {
       </div>
 
       {refusal && (
-        <Notice tone="deny" title="Attendance refused">
+        <Notice tone="deny" title={refusal.title || "Attendance refused"}>
           {refusal.message}
           {refusal.flagType && (
             <div className="mono text-[11px] text-muted mt-2 uppercase tracking-wider">

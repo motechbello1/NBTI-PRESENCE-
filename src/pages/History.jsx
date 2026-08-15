@@ -2,13 +2,36 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { Shell, StatusPill, Pill, Spinner } from "../components/UI";
 import { myHistory } from "../lib/db";
+import { endOfMonth, endOfYear, format, startOfMonth, startOfYear } from "date-fns";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
 } from "recharts";
 
-const fmtDate = (date) => new Date(date).toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
-const fmtLongDate = (date) => new Date(date).toLocaleDateString("en-GB", { weekday: "short", day: "2-digit", month: "short" });
+const localDate = (date) => new Date(`${date}T12:00:00`);
+const fmtDate = (date) => localDate(date).toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
+const fmtLongDate = (date) => localDate(date).toLocaleDateString("en-GB", { weekday: "short", day: "2-digit", month: "short", year: "numeric" });
 const fmtTime = (iso) => iso ? new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : "—";
+
+function selectedRange(view, values) {
+  if (view === "day") return { from: values.day, to: values.day };
+  if (view === "month") {
+    const [year, month] = values.month.split("-").map(Number);
+    const date = new Date(year, month - 1, 1);
+    return { from: format(startOfMonth(date), "yyyy-MM-dd"), to: format(endOfMonth(date), "yyyy-MM-dd") };
+  }
+  if (view === "year") {
+    const date = new Date(Number(values.year), 0, 1);
+    return { from: format(startOfYear(date), "yyyy-MM-dd"), to: format(endOfYear(date), "yyyy-MM-dd") };
+  }
+  return { from: values.customFrom, to: values.customTo };
+}
+
+function rangeLabel(view, range) {
+  if (view === "day") return localDate(range.from).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  if (view === "month") return localDate(range.from).toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+  if (view === "year") return localDate(range.from).getFullYear().toString();
+  return `${fmtLongDate(range.from)} to ${fmtLongDate(range.to)}`;
+}
 
 function RegisterTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
@@ -24,10 +47,30 @@ export default function History() {
   const { session } = useAuth();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const now = useMemo(() => new Date(), []);
+  const [view, setView] = useState("month");
+  const [day, setDay] = useState(format(now, "yyyy-MM-dd"));
+  const [month, setMonth] = useState(format(now, "yyyy-MM"));
+  const [year, setYear] = useState(format(now, "yyyy"));
+  const [customFrom, setCustomFrom] = useState(format(startOfMonth(now), "yyyy-MM-dd"));
+  const [customTo, setCustomTo] = useState(format(now, "yyyy-MM-dd"));
+  const range = useMemo(
+    () => selectedRange(view, { day, month, year, customFrom, customTo }),
+    [view, day, month, year, customFrom, customTo]
+  );
 
   useEffect(() => {
-    myHistory(session.user.id, 90).then(setRows).catch(() => {}).finally(() => setLoading(false));
-  }, [session]);
+    let current = true;
+    setLoading(true);
+    setError(null);
+    setRows([]);
+    myHistory(session.user.id, range)
+      .then((data) => { if (current) setRows(data); })
+      .catch((historyError) => { if (current) setError(historyError.message || "Your attendance record could not be loaded."); })
+      .finally(() => { if (current) setLoading(false); });
+    return () => { current = false; };
+  }, [session.user.id, range.from, range.to]);
 
   const stats = useMemo(() => {
     const present = rows.filter((row) => row.status === "present").length;
@@ -39,7 +82,7 @@ export default function History() {
   }, [rows]);
 
   const chart = useMemo(
-    () => [...rows].reverse().slice(-21).map((row) => ({
+    () => [...rows].reverse().slice(-31).map((row) => ({
       day: fmtDate(row.work_date),
       hours: row.hours_worked || 0,
       status: row.status,
@@ -47,23 +90,42 @@ export default function History() {
     [rows]
   );
 
-  if (loading) return <Shell><Spinner label="Loading your record" /></Shell>;
-
   return (
     <Shell>
       <section className="history-page" aria-labelledby="history-title">
         <header className="history-head">
           <div>
-            <div className="eyebrow">Personal attendance ledger · rolling 90 days</div>
-            <h1 id="history-title" className="display">My attendance record</h1>
+            <div className="eyebrow">Personal attendance sheet · choose any period</div>
+            <h1 id="history-title" className="display">My attendance records</h1>
           </div>
           <div className="history-reference mono">
-            <span>REGISTER COPY</span>
+            <span>{rangeLabel(view, range)}</span>
             <strong>{String(stats.days).padStart(2, "0")} ENTRIES</strong>
           </div>
         </header>
 
-        <dl className="history-summary" aria-label="Attendance summary for the last 90 days">
+        <section className="history-controls" aria-labelledby="history-period-title">
+          <div className="history-controls-head">
+            <div><span className="eyebrow">Attendance period</span><h2 id="history-period-title" className="display">Choose what you want to see</h2></div>
+            <span className="mono">{range.from} / {range.to}</span>
+          </div>
+          <div className="history-view-tabs" role="group" aria-label="Attendance period type">
+            {[['day', 'Day'], ['month', 'Month'], ['year', 'Year'], ['custom', 'Custom dates']].map(([value, label]) => (
+              <button key={value} type="button" className={view === value ? "is-active" : ""} aria-pressed={view === value} onClick={() => setView(value)}>{label}</button>
+            ))}
+          </div>
+          <div className="history-date-fields">
+            {view === "day" ? <label><span className="label">Select a day</span><input className="field mono" type="date" value={day} max={format(now, "yyyy-MM-dd")} onChange={(event) => { if (event.target.value) setDay(event.target.value); }} /></label> : null}
+            {view === "month" ? <label><span className="label">Select a month</span><input className="field mono" type="month" value={month} max={format(now, "yyyy-MM")} onChange={(event) => { if (event.target.value) setMonth(event.target.value); }} /></label> : null}
+            {view === "year" ? <label><span className="label">Select a year</span><select className="field mono" value={year} onChange={(event) => setYear(event.target.value)}>{Array.from({ length: 10 }, (_, index) => String(now.getFullYear() - index)).map((option) => <option key={option} value={option}>{option}</option>)}</select></label> : null}
+            {view === "custom" ? <><label><span className="label">From date</span><input className="field mono" type="date" value={customFrom} max={customTo} onChange={(event) => { if (event.target.value) setCustomFrom(event.target.value); }} /></label><label><span className="label">To date</span><input className="field mono" type="date" value={customTo} min={customFrom} max={format(now, "yyyy-MM-dd")} onChange={(event) => { if (event.target.value) setCustomTo(event.target.value); }} /></label></> : null}
+            <div className="history-selection"><span className="mono">SHOWING</span><strong>{rangeLabel(view, range)}</strong><small>{loading ? "Loading attendance entries" : `${rows.length} daily ${rows.length === 1 ? "entry" : "entries"}`}</small></div>
+          </div>
+        </section>
+
+        {error ? <div className="history-error" role="alert"><strong>Attendance sheet unavailable</strong><span>{error}</span></div> : null}
+
+        <dl className="history-summary" aria-label={`Attendance summary for ${rangeLabel(view, range)}`} aria-busy={loading}>
           <Summary label="Days recorded" value={stats.days} />
           <Summary label="Attendance rate" value={`${stats.rate}%`} tone={stats.rate >= 90 ? "clear" : stats.rate >= 75 ? "hold" : "deny"} />
           <Summary label="On time" value={stats.present} tone="clear" />
@@ -71,12 +133,12 @@ export default function History() {
           <Summary label="Hours recorded" value={stats.hours} note={`${stats.early} early departure${stats.early === 1 ? "" : "s"}`} />
         </dl>
 
-        {rows.length === 0 ? (
+        {loading ? <div className="history-period-loading"><Spinner label="Loading attendance sheet" /></div> : rows.length === 0 ? (
           <div className="history-empty notched">
             <div className="mono history-empty-code">REGISTER · NO ENTRIES</div>
             <div>
-              <h2 className="display">Your record is ready to begin.</h2>
-              <p>Once an on-site sign-in clears all four checks, that working day will appear here.</p>
+              <h2 className="display">No attendance was recorded for this period.</h2>
+              <p>Choose another day, month, year or custom range. A completed sign-in will appear here automatically.</p>
             </div>
           </div>
         ) : (
@@ -86,7 +148,7 @@ export default function History() {
                 <div className="history-section-head">
                   <div>
                     <div className="eyebrow">Measured time on site</div>
-                    <h2 id="hours-chart-title" className="display">Last 21 recorded days</h2>
+                    <h2 id="hours-chart-title" className="display">Recorded hours in this selection</h2>
                   </div>
                   <span className="mono">HOURS / DAY</span>
                 </div>

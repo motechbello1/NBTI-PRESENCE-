@@ -5,6 +5,7 @@ import { loadFaceModels, readPrimaryFace, sharpnessOf, grabFrame } from "../lib/
 import { loadSpoofModels, scanFrameObjects } from "../lib/spoofGuard";
 import { measure, ACTIONS } from "../lib/liveness";
 import { saveEnrolment } from "../lib/db";
+import { guideLanguage, readCameraFraming } from "../lib/cameraFraming";
 
 /**
  * Face enrolment.
@@ -43,11 +44,26 @@ export default function EnrolFlow({ onDone, onCancel }) {
   const held = useRef(0);
   const abort = useRef(false);
   const lastScan = useRef(0);
+  const framingRef = useRef({ missed: 0, aligned: 0 });
 
   const [phase, setPhase] = useState("idle");  // idle | preparing | running | saving | done | error
   const [step, setStep] = useState(0);
   const [status, setStatus] = useState("");
   const [error, setError] = useState(null);
+  const [framing, setFraming] = useState({
+    state: "idle",
+    instruction: "Position your face inside the guide",
+    detail: "The camera will show you when it is ready",
+  });
+  const updateFraming = useCallback((next) => {
+    setFraming((current) => (
+      current.state === next.state &&
+      current.instruction === next.instruction &&
+      current.detail === next.detail
+        ? current
+        : next
+    ));
+  }, []);
 
   const stop = useCallback(() => {
     cancelAnimationFrame(loopRef.current);
@@ -62,12 +78,20 @@ export default function EnrolFlow({ onDone, onCancel }) {
     setError(null);
     captured.current = [];
     held.current = 0;
+    framingRef.current = { missed: 0, aligned: 0 };
     setStep(0);
     setPhase("preparing");
+    setFraming({ state: "preparing", instruction: "Opening the front camera", detail: "Keep this screen open" });
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 640 } },
+        video: {
+          facingMode: "user",
+          width: { ideal: 960 },
+          height: { ideal: 1280 },
+          aspectRatio: { ideal: 0.75 },
+        },
+        audio: false,
       });
       streamRef.current = stream;
       videoRef.current.srcObject = stream;
@@ -79,11 +103,18 @@ export default function EnrolFlow({ onDone, onCancel }) {
     }
 
     setStatus("Loading the face models");
-    await loadFaceModels((s) => setStatus(s));
-    await loadSpoofModels((s) => setStatus(s));
+    await Promise.all([
+      loadFaceModels((s) => setStatus(s)),
+      loadSpoofModels((s) => setStatus(s)),
+    ]);
     if (abort.current) return;
 
     setPhase("running");
+    setFraming({
+      state: "searching",
+      instruction: "Move closer and place your face inside the guide",
+      detail: "Keep the phone upright and look directly at the camera",
+    });
 
     const tick = async () => {
       if (abort.current || !videoRef.current) return;
@@ -104,14 +135,43 @@ export default function EnrolFlow({ onDone, onCancel }) {
 
       if (count > 1) {
         setStatus("Only you should be in the frame");
+        updateFraming({ state: "blocked", instruction: "Only one person can be in view", detail: "Ask everyone else to step outside the camera frame" });
         held.current = 0;
         loopRef.current = requestAnimationFrame(tick);
         return;
       }
 
+      const frameReading = readCameraFraming(face, videoRef.current);
+
       if (!face) {
-        setStatus("Bring your face into the circle");
+        framingRef.current.missed += 1;
+        framingRef.current.aligned = 0;
         held.current = 0;
+        if (framingRef.current.missed >= 3) {
+          setStatus(frameReading.detail);
+          updateFraming(frameReading);
+        }
+        loopRef.current = requestAnimationFrame(tick);
+        return;
+      }
+
+      framingRef.current.missed = 0;
+      if (!frameReading.ready) {
+        framingRef.current.aligned = 0;
+        held.current = 0;
+        setStatus(frameReading.detail);
+        updateFraming(frameReading);
+        loopRef.current = requestAnimationFrame(tick);
+        return;
+      }
+
+      framingRef.current.aligned += 1;
+      if (framingRef.current.aligned < 4) {
+        held.current = 0;
+        if (framingRef.current.aligned >= 2) {
+          setStatus("Hold the phone still while the camera locks on");
+          updateFraming({ state: "locking", instruction: "Face found", detail: "Hold the phone still while the camera locks on" });
+        }
         loopRef.current = requestAnimationFrame(tick);
         return;
       }
@@ -122,6 +182,7 @@ export default function EnrolFlow({ onDone, onCancel }) {
       if (pose.test({ ...m, blinks: 0 })) {
         held.current++;
         setStatus(`Hold it`);
+        updateFraming({ state: "challenge", instruction: pose.prompt, detail: "Good position. Hold still for the reading" });
         if (held.current >= 6) {
           const canvas = grabFrame(videoRef.current, workRef.current);
           const quality = sharpnessOf(canvas, face.detection.box);
@@ -135,6 +196,7 @@ export default function EnrolFlow({ onDone, onCancel }) {
 
           captured.current.push({ descriptor: face.descriptor, quality, pose: pose.capture });
           held.current = 0;
+          framingRef.current.aligned = 0;
           setStep(captured.current.length);
 
           if (captured.current.length >= POSES.length) {
@@ -154,14 +216,16 @@ export default function EnrolFlow({ onDone, onCancel }) {
         }
       } else {
         held.current = Math.max(0, held.current - 1);
-        setStatus(pose.hint);
+        const visibleHint = guideLanguage(pose.hint);
+        setStatus(visibleHint);
+        updateFraming({ state: "challenge", instruction: pose.prompt, detail: visibleHint });
       }
 
       loopRef.current = requestAnimationFrame(tick);
     };
 
     loopRef.current = requestAnimationFrame(tick);
-  }, [session, refresh, stop, onDone]);
+  }, [session, refresh, stop, onDone, updateFraming]);
 
   const pose = POSES[Math.min(step, POSES.length - 1)];
 
@@ -184,15 +248,12 @@ export default function EnrolFlow({ onDone, onCancel }) {
         </div>
 
         <div className="enrol-camera">
-          <div className="scan-frame">
+          <div className="scan-frame" data-framing={framing.state}>
             <video ref={videoRef} playsInline muted autoPlay aria-label="Live camera view for face enrolment" />
-            {phase === "running" ? <div className="sweep" /> : null}
             {phase === "running" ? <EnrolCue direction={pose.cue} /> : null}
-            <div className="enrol-reticle" aria-hidden="true"><i /><i /><i /><i /></div>
-            <svg className="enrol-ring" viewBox="0 0 340 340" aria-hidden="true">
-              <circle cx="170" cy="170" r="158" />
-              <circle className="is-progress" cx="170" cy="170" r="158" pathLength="4" strokeDasharray={`${step} ${4 - step}`} />
-            </svg>
+            <div className="face-guide" aria-hidden="true"><i className="face-guide-eye-line" /><i className="face-guide-chin" /></div>
+            {phase !== "idle" ? <div className="scan-guidance" aria-hidden="true"><span className="mono">{framing.state === "challenge" ? `POSITION ${Math.min(step + 1, 4)} OF 4` : "FACE POSITION"}</span><strong>{framing.instruction}</strong><small>{framing.detail}</small></div> : null}
+            <div className="scan-progress" aria-hidden="true"><i style={{ width: `${(step / POSES.length) * 100}%` }} /></div>
             {phase === "idle" ? (
               <div className="enrol-privacy">
                 <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M7 11h5l2-3h5l2 3h4v14H7z" /><circle cx="16" cy="18" r="4" /></svg>

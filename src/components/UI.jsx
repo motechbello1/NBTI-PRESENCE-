@@ -17,8 +17,8 @@ const ADMIN_LINKS = [
 ];
 
 const STAFF_LINKS = [
-  ["/", "Today"],
-  ["/history", "My record"],
+  ["/", "Attendance"],
+  ["/history", "Attendance records"],
   ["/reports", "Reports"],
   ["/profile", "Profile"],
 ];
